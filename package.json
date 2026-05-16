@@ -20,7 +20,8 @@
     "framer-motion": "^10.16.16",
     "vexflow": "^4.2.3"
   },
-  "devDependencies": {
+ "devDependencies": {
+    "string-replace-loader": "^3.1.0",
     "@types/node": "^20.10.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
@@ -28,7 +29,7 @@
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.4.0"
-  },
+  }
   "overrides": {
     "@tensorflow/tfjs-core": "4.22.0"
   }
