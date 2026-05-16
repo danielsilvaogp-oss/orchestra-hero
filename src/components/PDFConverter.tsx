@@ -56,8 +56,7 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
         convertResult = await convertPDFToMusicXML(arrayBuffer, {
           targetInstrument: 'violin',
           tempo: 120,
-          includeDynamics: true,
-          maxNotes: 500
+          includeDynamics: true
         })
       }
       
