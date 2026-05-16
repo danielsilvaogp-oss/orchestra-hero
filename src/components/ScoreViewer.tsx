@@ -31,8 +31,12 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
         setError(null)
         
         const VF = await import('vexflow')
+        const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = VF
         
-        containerRef.current.innerHTML = ''
+        const renderer = new Renderer(containerRef.current, Renderer.Backends.SVG)
+        renderer.resize(800, 250)
+        const context = renderer.getContext()
+        context.setFont('Arial', 10)
         
         const parser = new DOMParser()
         const doc = parser.parseFromString(musicxml, 'text/xml')
@@ -64,12 +68,11 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
             '32': '32'
           }
           
-          const durKey = String(duration)
           const keys = `${step.toLowerCase()}/${octave}${accidental}`
           
           notes.push({
             keys,
-            duration: durationMap[duration] || 'q',
+            duration: durationMap[String(duration)] || 'q',
             type: 'quarter'
           })
         })
@@ -80,25 +83,66 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
           return
         }
         
-        const factory = new VF.Factory({ renderer: { elementId: containerRef.current.id, width: 800, height: 200 } })
+        const stave = new Stave(10, 40, 780)
+        stave.addClef('treble').addTimeSignature('4/4')
+        stave.setContext(context).draw()
         
-        const system = factory.System()
-        
-        const voiceNotes = notes.slice(0, 8).map((noteData) => {
-          const note = factory.StaveNote({ keys: [noteData.keys], duration: noteData.duration })
+        const staveNotes = notes.slice(0, 8).map((noteData) => {
+          const note = new StaveNote({
+            keys: [noteData.keys],
+            duration: noteData.duration
+          })
           
           if (noteData.keys.includes('#')) {
-            note.addModifier(new VF.Accidental('#'), 0)
+            note.addModifier(new Accidental('#'), 0)
+          } else if (noteData.keys.includes('b')) {
+            note.addModifier(new Accidental('b'), 0)
           }
           
           return note
         })
         
-        system.addVoices([
-          factory.Voice({ num_beats: 8, beat_value: 4 }).addTickables(voiceNotes)
-        ])
+        if (staveNotes.length > 0) {
+          const voice = new Voice({ time: '8/4' })
+          
+          staveNotes.forEach(note => {
+            voice.addTickable(note)
+          })
+          
+          new Formatter().joinVoices([voice]).format([voice], 700)
+          voice.draw(context, stave)
+        }
         
-        factory.draw()
+        if (notes.length > 8) {
+          const stave2 = new Stave(10, 140, 780)
+          stave2.setContext(context).draw()
+          
+          const stave2Notes = notes.slice(8, 16).map((noteData) => {
+            const note = new StaveNote({
+              keys: [noteData.keys],
+              duration: noteData.duration
+            })
+            
+            if (noteData.keys.includes('#')) {
+              note.addModifier(new Accidental('#'), 0)
+            } else if (noteData.keys.includes('b')) {
+              note.addModifier(new Accidental('b'), 0)
+            }
+            
+            return note
+          })
+          
+          if (stave2Notes.length > 0) {
+            const voice2 = new Voice({ time: '8/4' })
+            
+            stave2Notes.forEach(note => {
+              voice2.addTickable(note)
+            })
+            
+            new Formatter().joinVoices([voice2]).format([voice2], 700)
+            voice2.draw(context, stave2)
+          }
+        }
         
         setSvgContent(containerRef.current.innerHTML)
         setIsLoading(false)
@@ -110,8 +154,7 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
     }
     
     if (musicxml && containerRef.current) {
-      const id = 'score-container-' + Math.random().toString(36).substr(2, 9)
-      containerRef.current.id = id
+      containerRef.current.innerHTML = ''
       renderScore()
     }
   }, [musicxml])
@@ -171,7 +214,6 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
 
         {!isLoading && !error && (
           <div 
-            id="score-container"
             ref={containerRef} 
             className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 overflow-auto"
             style={{ minHeight: '300px' }}
