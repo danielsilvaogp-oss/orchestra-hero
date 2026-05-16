@@ -5,6 +5,7 @@ const nextConfig = {
     domains: ['localhost'],
   },
   webpack: (config, { isServer }) => {
+    // Solo manejamos los fallbacks de Node para el navegador
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
