@@ -19,7 +19,7 @@ export interface ConvertResult {
 export interface ConversionOptions {
   targetInstrument: string
   includeDynamics: boolean
-  tempo?: number
+  tempo: number
 }
 
 // Note: This is a simplified converter. For production use,
@@ -48,7 +48,7 @@ export async function convertPDFToMusicXML(
     
     // Method 2: Try to parse as plain text music notation
     // This handles various simple text-based formats
-    const parsedNotes = parseTextNotation(text, options.tempo)
+    const parsedNotes = parseTextNotation(text, options.tempo || 120)
     
     if (parsedNotes.length > 0) {
       const musicXML = generateMusicXML(parsedNotes, options)
@@ -65,7 +65,7 @@ export async function convertPDFToMusicXML(
     }
     
     // Method 3: Try to detect basic note patterns
-    const detectedNotes = detectBasicNotes(text, options.tempo)
+    const detectedNotes = detectBasicNotes(text, options.tempo || 120)
     
     if (detectedNotes.length > 0) {
       const musicXML = generateMusicXML(detectedNotes, options)
