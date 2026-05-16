@@ -4,7 +4,6 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-  // Esto es VITAL para que la Hammer Academy funcione en Vercel
   webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
       config.resolve.fallback = {
@@ -14,7 +13,7 @@ const nextConfig = {
         crypto: false,
       };
 
-      // Inyectamos el plugin para que el navegador no busque archivos inexistentes
+      // Inyectamos el plugin para evitar que busque archivos inexistentes
       config.plugins.push(
         new webpack.NormalModuleReplacementPlugin(
           /tflite_web_api_client/,
