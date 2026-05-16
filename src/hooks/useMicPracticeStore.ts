@@ -25,6 +25,7 @@ interface MicPracticeStore {
   
   // Game state
   gameStartTime: number
+  isPlaying: boolean
   notes: ParsedNote[]
   processedNotes: Set<number>
   currentHitNote: number | null
@@ -121,6 +122,7 @@ export const useMicPracticeStore = create<MicPracticeStore>((set, get) => ({
   
   // Game state
   gameStartTime: 0,
+  isPlaying: false,
   notes: [],
   processedNotes: new Set(),
   currentHitNote: null,
@@ -223,6 +225,7 @@ export const useMicPracticeStore = create<MicPracticeStore>((set, get) => ({
   
   startGame: () => set({
     gameStartTime: Date.now(),
+    isPlaying: true,
     score: 0,
     combo: 0,
     maxCombo: 0,
@@ -238,6 +241,7 @@ export const useMicPracticeStore = create<MicPracticeStore>((set, get) => ({
     notes: [],
     processedNotes: new Set(),
     gameStartTime: 0,
+    isPlaying: false,
     score: 0,
     combo: 0,
     maxCombo: 0,
