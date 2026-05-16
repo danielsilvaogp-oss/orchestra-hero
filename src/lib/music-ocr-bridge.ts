@@ -1,4 +1,3 @@
-// Music OCR Bridge - Hammer Academy V2 PRO Edition
 import * as tf from '@tensorflow/tfjs';
 
 export interface OCRResult {
@@ -34,37 +33,31 @@ export class HammerOCRService {
     if (this.modelLoaded) return true;
 
     try {
-      console.log(`Iniciando motor Hammer IA (Fix WASM): ${modelVersion}`);
+      console.log(`Cargando Hammer IA: ${modelVersion}`);
       
-      // Importación dinámica de la librería
+      // Importación dinámica
       const tflite = await import('@tensorflow/tfjs-tflite');
       
-      // FORZAR VERSIÓN EXACTA PARA EVITAR EL ERROR DE _MALLOC
-      // Usamos alpha.10 que es la versión que coincide con el cliente API interno
-      const VERSION = '0.0.1-alpha.10';
-      tflite.setWasmPath(`https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@${VERSION}/dist/`);
+      // Forzamos la versión alpha.10 que es la más compatible
+      tflite.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.10/dist/');
       
       const modelPath = OCR_MODELS[modelVersion];
-      
-      // Cargamos el modelo
       this.model = await tflite.loadTFLiteModel(modelPath);
       
-      // Pequeña espera para asegurar que el entorno WASM esté estabilizado
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Espera de seguridad para inicialización de memoria WASM
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       this.modelLoaded = true;
-      console.log('Hammer Academy V2 PRO: Motor y memoria WASM listos');
       return true;
     } catch (error) {
-      console.error('Error crítico en el motor de IA:', error);
-      this.modelLoaded = false;
+      console.error('Error al cargar modelo:', error);
       return false;
     }
   }
 
   async processImage(file: File | Blob): Promise<OCRResult> {
     const loaded = await this.loadModel();
-    if (!loaded) return { success: false, notes: [], warnings: ['Error de memoria en IA'] };
+    if (!loaded) return { success: false, notes: [], warnings: ['Error de motor'] };
 
     try {
       const imageTensor = await this.preprocess(file);
@@ -74,15 +67,12 @@ export class HammerOCRService {
       imageTensor.dispose();
       predictions.dispose();
 
-      const notes = this.parseResults(data);
-
       return {
         success: true,
-        notes,
+        notes: this.parseResults(data),
         metadata: { confidence: 0.92, detectedInstruments: ['viola'] }
       };
     } catch (error) {
-      console.error('OCR Error:', error);
       return { success: false, notes: [] };
     }
   }
@@ -95,10 +85,7 @@ export class HammerOCRService {
     const ctx = canvas.getContext('2d')!;
     ctx.drawImage(img, 0, 0, 640, 640);
 
-    return tf.browser.fromPixels(canvas)
-      .toFloat()
-      .div(255.0) 
-      .expandDims(0);
+    return tf.browser.fromPixels(canvas).toFloat().div(255.0).expandDims(0);
   }
 
   private parseResults(results: Float32Array): OCRExtractedNote[] {
