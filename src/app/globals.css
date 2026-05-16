@@ -5,8 +5,6 @@
 @tailwind utilities;
 
 :root {
-  --orchestra-dark: #0a0a14;
-  --orchestra-dark-secondary: #12121f;
   --orchestra-gold: #d4af37;
   --orchestra-gold-light: #f0d060;
   --orchestra-gold-dark: #a08020;
@@ -26,18 +24,18 @@
 
 html, body {
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 body {
   font-family: 'Fredoka', 'Inter', sans-serif;
-  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
-  color: white;
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #1e293b;
 }
 
-/* Cute gradient background with stars */
+/* Light gradient background */
 .bg-cute-gradient {
-  background: linear-gradient(180deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+  background: linear-gradient(180deg, #f8fafc 0%, #e0f2fe 50%, #fef3c7 100%);
   position: relative;
   overflow: hidden;
 }
@@ -47,11 +45,11 @@ body {
   position: absolute;
   inset: 0;
   background-image: 
-    radial-gradient(white 1px, transparent 1px),
-    radial-gradient(white 1px, transparent 1px);
+    radial-gradient(#a855f7 1px, transparent 1px),
+    radial-gradient(#ff6b9d 1px, transparent 1px);
   background-size: 50px 50px, 100px 100px;
   background-position: 0 0, 25px 25px;
-  opacity: 0.1;
+  opacity: 0.15;
   animation: twinkle 4s ease-in-out infinite;
 }
 
@@ -66,16 +64,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a2e;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #d4af37;
+  background: #94a3b8;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #f0d060;
+  background: #64748b;
 }
 
 /* Gold text glow */
@@ -85,20 +83,20 @@ body {
 
 /* Glass effect */
 .glass {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-/* Gradient backgrounds */
+/* Light gradient backgrounds */
 .bg-orchestra {
-  background: linear-gradient(180deg, #0a0a14 0%, #12121f 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .bg-grid {
   background-image: 
-    linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(212, 175, 55, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.1) 1px, transparent 1px);
   background-size: 50px 50px;
 }
 
@@ -129,17 +127,17 @@ body {
   animation: float 3s ease-in-out infinite;
 }
 
-/* Cute button styles - bouncy and fun */
+/* Cute button styles */
 .btn-gold {
-  @apply px-6 py-3 bg-gradient-to-r from-orchestra-gold to-orchestra-gold-dark text-orchestra-dark font-semibold rounded-2xl;
-  @apply hover:from-orchestra-gold-light hover:to-orchestra-gold;
+  @apply px-6 py-3 bg-gradient-to-r from-amber-400 to-yellow-500 text-amber-900 font-semibold rounded-2xl;
+  @apply hover:from-amber-300 hover:to-yellow-400;
   @apply transition-all duration-300;
-  @apply shadow-lg shadow-orchestra-gold/30;
+  @apply shadow-lg shadow-amber-200;
   @apply hover:scale-105 active:scale-95;
 }
 
 .btn-gold:hover {
-  box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.5);
 }
 
 .btn-cute {
@@ -172,21 +170,21 @@ body {
 }
 
 .btn-outline {
-  @apply px-6 py-3 border-2 border-orchestra-gold text-orchestra-gold font-semibold rounded-2xl;
-  @apply hover:bg-orchestra-gold hover:text-orchestra-dark;
+  @apply px-6 py-3 border-2 border-amber-400 text-amber-600 font-semibold rounded-2xl;
+  @apply hover:bg-amber-400 hover:text-amber-900;
   @apply transition-all duration-300;
 }
 
-/* Cute card styles with bounce */
+/* Cute card styles */
 .cute-card {
   @apply relative overflow-hidden rounded-3xl p-5 cursor-pointer;
-  @apply border-2 border-white/10 bg-white/5;
+  @apply border-2 border-slate-200 bg-white;
   @apply transition-all duration-300;
   @apply hover:scale-[1.02] hover:shadow-xl;
 }
 
 .cute-card-selected {
-  @apply border-pink-400 bg-pink-500/20;
+  @apply border-pink-400 bg-pink-50;
   box-shadow: 0 0 40px rgba(236, 72, 153, 0.3);
   animation: pulse-cute 2s ease-in-out infinite;
 }
@@ -204,17 +202,6 @@ body {
 
 .animate-bounce-fun {
   animation: bounce-fun 2s ease-in-out infinite;
-}
-
-/* Cute floating emojis */
-@keyframes float-cute {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  25% { transform: translateY(-10px) rotate(5deg); }
-  75% { transform: translateY(10px) rotate(-5deg); }
-}
-
-.animate-float-cute {
-  animation: float-cute 3s ease-in-out infinite;
 }
 
 /* Rainbow text */
@@ -235,35 +222,35 @@ body {
 /* Cute instrument cards */
 .instrument-card {
   @apply relative overflow-hidden rounded-2xl p-4 cursor-pointer;
-  @apply border-2 border-white/10 bg-white/5;
-  @apply hover:border-pink-400/50 hover:bg-white/10;
+  @apply border-2 border-slate-200 bg-white;
+  @apply hover:border-pink-300 hover:bg-pink-50;
   @apply transition-all duration-300;
-  @apply hover:scale-[1.02] hover:shadow-lg hover:shadow-pink-500/20;
+  @apply hover:scale-[1.02] hover:shadow-lg hover:shadow-pink-200;
 }
 
 .instrument-card.selected {
-  @apply border-purple-400 bg-purple-500/20;
-  box-shadow: 0 0 30px rgba(168, 85, 247, 0.4);
+  @apply border-purple-400 bg-purple-50;
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
   animation: glow-purple 2s ease-in-out infinite;
 }
 
 @keyframes glow-purple {
-  0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
-  50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.6); }
+  0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(168, 85, 247, 0.5); }
 }
 
 /* Cute song cards */
 .song-card {
   @apply relative overflow-hidden rounded-2xl p-5 cursor-pointer;
-  @apply border-2 border-white/10 bg-white/5;
-  @apply hover:border-cyan-400/50 hover:transform hover:-translate-y-2;
+  @apply border-2 border-slate-200 bg-white;
+  @apply hover:border-cyan-300 hover:-translate-y-2;
   @apply transition-all duration-300;
-  @apply hover:shadow-xl hover:shadow-cyan-500/20;
+  @apply hover:shadow-xl hover:shadow-cyan-200;
 }
 
 .song-card.selected {
-  @apply border-cyan-400 bg-cyan-500/20;
-  box-shadow: 0 0 30px rgba(6, 182, 212, 0.4);
+  @apply border-cyan-400 bg-cyan-50;
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.3);
 }
 
 /* Cute difficulty badges */
@@ -294,9 +281,9 @@ body {
 
 /* Input styles */
 .input-field {
-  @apply w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg;
-  @apply text-white placeholder-gray-500;
-  @apply focus:outline-none focus:border-orchestra-gold focus:ring-1 focus:ring-orchestra-gold;
+  @apply w-full px-4 py-3 bg-white border border-slate-200 rounded-lg;
+  @apply text-slate-800 placeholder-slate-400;
+  @apply focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100;
   @apply transition-all duration-300;
 }
 
@@ -307,7 +294,7 @@ body {
 
 /* Loading spinner */
 .spinner {
-  @apply w-12 h-12 border-4 border-orchestra-dark border-t-orchestra-gold rounded-full;
+  @apply w-12 h-12 border-4 border-slate-200 border-t-amber-400 rounded-full;
   animation: spin 1s linear infinite;
 }
 
@@ -315,4 +302,26 @@ body {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Light theme specific overrides */
+.bg-dark-gradient {
+  background: linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.text-white {
+  color: #1e293b;
+}
+
+.bg-white\/10 {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.bg-white\/20 {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+/* Light theme card backgrounds */
+.bg-slate-900\/90 {
+  background: rgba(255, 255, 255, 0.95);
 }

@@ -12,6 +12,7 @@ import AdminPanel from '@/components/AdminPanel'
 import PDFConverter from '@/components/PDFConverter'
 import AchievementDisplay from '@/components/AchievementDisplay'
 import ListenRepeatMode from '@/components/ListenRepeatMode'
+import AppHeader from '@/components/AppHeader'
 import { useMicPracticeStore } from '@/hooks/useMicPracticeStore'
 import { useListenRepeatStore } from '@/hooks/listenRepeatStore'
 
@@ -22,7 +23,6 @@ export default function Home() {
   const [customMusicXML, setCustomMusicXML] = useState<string | null>(null)
   const [customMetadata, setCustomMetadata] = useState<any>(null)
 
-  // Player stats for achievements (mock for now)
   const [playerStats] = useState({
     totalPlays: 15,
     totalScore: 25000,
@@ -36,7 +36,6 @@ export default function Home() {
     currentLevel: 3
   })
 
-  // Notes for listen repeat mode
   const listenRepeatNotes = useMicPracticeStore(state => state.notes)
 
   function handleImportFromConverter(musicxml: string, metadata: any) {
@@ -52,8 +51,17 @@ export default function Home() {
     useGameStore.getState().setScreen('menu')
   }
 
+  const showHeader = screen === 'menu' || screen === 'achievements' || screen === 'listenRepeat'
+
   return (
-    <main>
+    <main className="min-h-screen">
+      {showHeader && !showConverter && (
+        <AppHeader 
+          onOpenConverter={() => setShowConverter(true)}
+          onShowAdmin={() => setShowAdmin(true)}
+        />
+      )}
+      
       {screen === 'menu' && !showConverter && (
         <MainMenu 
           onShowAdmin={() => setShowAdmin(true)}
