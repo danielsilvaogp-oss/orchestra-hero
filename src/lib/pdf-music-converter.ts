@@ -19,9 +19,7 @@ export interface ConvertResult {
 export interface ConversionOptions {
   targetInstrument: string
   includeDynamics: boolean
-  tempo: number
-  simplify Accidentals: boolean
-  maxNotes: number
+  tempo?: number
 }
 
 // Note: This is a simplified converter. For production use,
