@@ -109,7 +109,7 @@ export class HammerOCRService {
       
       // Run inference
       const predictions = this.model!.predict(imageTensor) as tf.Tensor
-      const results = await predictions.data()
+      const results = await predictions.data() as Float32Array
       
       // Process predictions
       const notes = this.parsePredictions(results)
