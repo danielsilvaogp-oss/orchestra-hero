@@ -13,31 +13,42 @@ interface ScoreViewerProps {
 interface ParsedNote {
   keys: string
   duration: string
+  octave: number
 }
 
-export default function ScoreViewer({ musicxml, title, onClose, onImport }: ScoreViewerProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [svgContent, setSvgContent] = useState<string>('')
+function safeParseXML(xmlString: string): Document | null {
+  try {
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(xmlString, 'text/xml')
+    
+    const parseError = doc.querySelector('parsererror')
+    if (parseError) {
+      console.warn('XML parse error:', parseError.textContent)
+      return null
+    }
+    
+    return doc
+  } catch (e) {
+    console.error('Failed to parse XML:', e)
+    return null
+  }
+}
 
-  useEffect(() => {
-    async function renderScore() {
-      if (!containerRef.current) return
+function extractNotesFromDoc(doc: Document): ParsedNote[] {
+  const notes: ParsedNote[] = []
+  
+  const parts = doc.querySelectorAll('part')
+  parts.forEach((part) => {
+    const measures = part.querySelectorAll('measure')
+    
+    measures.forEach((measure) => {
+      const noteElements = measure.querySelectorAll('note')
       
-      try {
-        setIsLoading(true)
-        setError(null)
-        
-        const VF = await import('vexflow')
-        
-        const parser = new DOMParser()
-        const doc = parser.parseFromString(musicxml, 'text/xml')
-        
-        const notes: ParsedNote[] = []
-        const noteElements = doc.querySelectorAll('note')
-        
-        noteElements.forEach((noteEl) => {
+      noteElements.forEach((noteEl) => {
+        try {
+          const isChord = noteEl.querySelector('chord')
+          if (isChord) return
+          
           const pitchEl = noteEl.querySelector('pitch')
           if (!pitchEl) return
           
@@ -46,28 +57,99 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
           const alter = pitchEl.querySelector('alter')?.textContent
           
           let accidental = ''
-          if (alter === '1') accidental = '#'
-          else if (alter === '-1') accidental = 'b'
+          if (alter === '1' || alter === '#') accidental = '#'
+          else if (alter === '-1' || alter === 'b') accidental = 'b'
+          
+          const restEl = noteEl.querySelector('rest')
+          if (restEl) return
           
           const durationEl = noteEl.querySelector('duration')
-          let duration = parseInt(durationEl?.textContent || '4')
+          let duration = 4
+          if (durationEl) {
+            const durValue = parseInt(durationEl.textContent || '4')
+            if (!isNaN(durValue)) duration = durValue
+          }
+          
+          const typeEl = noteEl.querySelector('type')
+          const typeText = typeEl?.textContent?.toLowerCase()
           
           const durationMap: Record<string, string> = {
-            '1': 'w', '2': 'h', '4': 'q', '8': '8', '16': '16', '32': '32'
+            'whole': 'w',
+            'half': 'h',
+            'quarter': 'q',
+            'eighth': '8',
+            '16th': '16',
+            '32nd': '32',
+            '1': 'w',
+            '2': 'h',
+            '4': 'q',
+            '8': '8',
+            '16': '16',
+            '32': '32'
           }
           
           const keys = `${step.toLowerCase()}/${octave}${accidental}`
           
           notes.push({
             keys,
-            duration: durationMap[String(duration)] || 'q'
+            duration: durationMap[typeText || String(duration)] || 'q',
+            octave
           })
-        })
+        } catch (e) {
+          console.warn('Failed to parse note:', e)
+        }
+      })
+    })
+  })
+  
+  return notes
+}
+
+function generateSimpleDemoNotes(): ParsedNote[] {
+  const notes: ParsedNote[] = []
+  const scale = ['c', 'd', 'e', 'f', 'g', 'a', 'b']
+  const octaves = [4, 4, 4, 4, 4, 4, 5]
+  
+  scale.forEach((note, i) => {
+    notes.push({
+      keys: `${note}/${octaves[i]}`,
+      duration: 'q',
+      octave: octaves[i]
+    })
+  })
+  
+  return notes
+}
+
+export default function ScoreViewer({ musicxml, title, onClose, onImport }: ScoreViewerProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [svgContent, setSvgContent] = useState<string>('')
+  const [fallbackMode, setFallbackMode] = useState(false)
+
+  useEffect(() => {
+    async function renderScore() {
+      if (!containerRef.current) return
+      
+      try {
+        setIsLoading(true)
+        setError(null)
+        setFallbackMode(false)
+        
+        const VF = await import('vexflow')
+        
+        const doc = safeParseXML(musicxml)
+        let notes: ParsedNote[] = []
+        
+        if (doc) {
+          notes = extractNotesFromDoc(doc)
+        }
         
         if (notes.length === 0) {
-          setError('No se encontraron notas en la partitura')
-          setIsLoading(false)
-          return
+          console.warn('No notes found, using demo notes')
+          notes = generateSimpleDemoNotes()
+          setFallbackMode(true)
         }
         
         containerRef.current.innerHTML = ''
@@ -80,28 +162,8 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
         stave.addClef('treble').addTimeSignature('4/4')
         stave.setContext(context).draw()
         
-        const staveNotes = notes.slice(0, 8).map((noteData, idx) => {
-          const note = new VF.StaveNote({
-            keys: [noteData.keys],
-            duration: noteData.duration
-          })
-          
-          if (noteData.keys.includes('#')) {
-            note.addModifier(new VF.Accidental('#'), 0)
-          } else if (noteData.keys.includes('b')) {
-            note.addModifier(new VF.Accidental('b'), 0)
-          }
-          
-          return note
-        })
-        
-        VF.Formatter.FormatAndDraw(context, stave, staveNotes)
-        
-        if (notes.length > 8) {
-          const stave2 = new VF.Stave(10, 150, 780)
-          stave2.setContext(context).draw()
-          
-          const stave2Notes = notes.slice(8, 16).map((noteData) => {
+        const staveNotes = notes.slice(0, 8).map((noteData) => {
+          try {
             const note = new VF.StaveNote({
               keys: [noteData.keys],
               duration: noteData.duration
@@ -114,16 +176,66 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
             }
             
             return note
-          })
+          } catch (e) {
+            console.warn('Failed to create note:', noteData, e)
+            return null
+          }
+        }).filter(Boolean) as any[]
+        
+        if (staveNotes.length > 0) {
+          try {
+            VF.Formatter.FormatAndDraw(context, stave, staveNotes)
+          } catch (e) {
+            console.warn('Formatter failed, using basic render:', e)
+            staveNotes.forEach((note, i) => {
+              const x = 50 + i * 80
+              note.setBoundingBox(new VF.BoundingBox(x, 60, 80, 40))
+              note.setContext(context).draw()
+            })
+          }
+        }
+        
+        if (notes.length > 8) {
+          const stave2 = new VF.Stave(10, 150, 780)
+          stave2.setContext(context).draw()
           
-          VF.Formatter.FormatAndDraw(context, stave2, stave2Notes)
+          const stave2Notes = notes.slice(8, 16).map((noteData) => {
+            try {
+              const note = new VF.StaveNote({
+                keys: [noteData.keys],
+                duration: noteData.duration
+              })
+              
+              if (noteData.keys.includes('#')) {
+                note.addModifier(new VF.Accidental('#'), 0)
+              } else if (noteData.keys.includes('b')) {
+                note.addModifier(new VF.Accidental('b'), 0)
+              }
+              
+              return note
+            } catch (e) {
+              return null
+            }
+          }).filter(Boolean) as any[]
+          
+          if (stave2Notes.length > 0) {
+            try {
+              VF.Formatter.FormatAndDraw(context, stave2, stave2Notes)
+            } catch (e) {
+              stave2Notes.forEach((note, i) => {
+                const x = 50 + i * 80
+                note.setBoundingBox(new VF.BoundingBox(x, 170, 80, 40))
+                note.setContext(context).draw()
+              })
+            }
+          }
         }
         
         setSvgContent(containerRef.current.innerHTML)
         setIsLoading(false)
       } catch (err: any) {
         console.error('Error rendering score:', err)
-        setError(err?.message || 'Error al renderizar la partitura')
+        setError('Error al renderizar la partitura. Intenta con otro archivo.')
         setIsLoading(false)
       }
     }
@@ -188,12 +300,21 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
         )}
 
         {!isLoading && !error && (
-          <div 
-            ref={containerRef} 
-            className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 overflow-auto"
-            style={{ minHeight: '300px' }}
-            dangerouslySetInnerHTML={{ __html: svgContent }}
-          />
+          <>
+            {fallbackMode && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
+                <p className="text-yellow-700 text-sm">
+                  ⚠️ La partitura original no pudo ser parseada. Mostrando demostración.
+                </p>
+              </div>
+            )}
+            <div 
+              ref={containerRef} 
+              className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 overflow-auto"
+              style={{ minHeight: '300px' }}
+              dangerouslySetInnerHTML={{ __html: svgContent }}
+            />
+          </>
         )}
 
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
