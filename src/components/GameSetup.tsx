@@ -16,7 +16,7 @@ export default function GameSetup({ onBack }: GameSetupProps) {
   const { selectedInstrument, selectInstrument } = useGameStore()
   const { setNotes } = useMicPracticeStore()
   
-  const [step, setStep] = useState<'instrument' | 'settings' | 'game'>('instrument')
+  const [step, setStep] = useState<string>('instrument')
   const [gameMode, setGameMode] = useState('learn')
   const [ageGroup, setAgeGroup] = useState('6-8')
   
