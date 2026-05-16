@@ -1,13 +1,6 @@
 // Music OCR Bridge - Hammer Academy V2 PRO Edition
 import * as tf from '@tensorflow/tfjs';
 
-// Definimos la interfaz para que TypeScript no se queje del objeto global
-declare global {
-  interface Window {
-    tflite: any;
-  }
-}
-
 export interface OCRResult {
   success: boolean;
   notes: OCRExtractedNote[];
@@ -41,41 +34,37 @@ export class HammerOCRService {
     if (this.modelLoaded) return true;
 
     try {
-      console.log(`Iniciando motor Hammer IA (External Script): ${modelVersion}`);
+      console.log(`Iniciando motor Hammer IA (Fix WASM): ${modelVersion}`);
       
-      // 1. CARGA DINÁMICA DEL SCRIPT (Evita errores de Webpack/Vercel)
-      if (!window.tflite) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.10/dist/tf-tflite.min.js';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
-
-      const tflite = window.tflite;
+      // Importación dinámica de la librería
+      const tflite = await import('@tensorflow/tfjs-tflite');
       
-      // 2. Configuración de WASM
-      tflite.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.10/dist/');
+      // FORZAR VERSIÓN EXACTA PARA EVITAR EL ERROR DE _MALLOC
+      // Usamos alpha.10 que es la versión que coincide con el cliente API interno
+      const VERSION = '0.0.1-alpha.10';
+      tflite.setWasmPath(`https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@${VERSION}/dist/`);
       
       const modelPath = OCR_MODELS[modelVersion];
       
-      // 3. Carga del modelo
+      // Cargamos el modelo
       this.model = await tflite.loadTFLiteModel(modelPath);
-      this.modelLoaded = true;
       
-      console.log('Hammer Academy V2 PRO: Motor cargado desde CDN con éxito');
+      // Pequeña espera para asegurar que el entorno WASM esté estabilizado
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      this.modelLoaded = true;
+      console.log('Hammer Academy V2 PRO: Motor y memoria WASM listos');
       return true;
     } catch (error) {
       console.error('Error crítico en el motor de IA:', error);
+      this.modelLoaded = false;
       return false;
     }
   }
 
   async processImage(file: File | Blob): Promise<OCRResult> {
     const loaded = await this.loadModel();
-    if (!loaded) return { success: false, notes: [], warnings: ['Error al inicializar IA'] };
+    if (!loaded) return { success: false, notes: [], warnings: ['Error de memoria en IA'] };
 
     try {
       const imageTensor = await this.preprocess(file);
