@@ -41,7 +41,7 @@ export default function GameSetup({ onBack }: GameSetupProps) {
       <div className="flex items-center gap-4 mb-8">
         <div className={`w-3 h-3 rounded-full ${step === 'instrument' ? 'bg-orchestra-gold' : 'bg-green-400'}`} />
         <div className="w-16 h-0.5 bg-white/20" />
-        <div className={`w-3 h-3 rounded-full ${step === 'settings' ? 'bg-orchestra-gold' : step === 'game' ? 'bg-green-400' : 'bg-white/20'}`} />
+        <div className={`w-3 h-3 rounded-full ${step === 'settings' ? 'bg-orchestra-gold' : (step === 'game' || step === 'instrument') ? 'bg-green-400' : 'bg-white/20'}`} />
         <div className="w-16 h-0.5 bg-white/20" />
         <div className={`w-3 h-3 rounded-full ${step === 'game' ? 'bg-green-400' : 'bg-white/20'}`} />
       </div>
