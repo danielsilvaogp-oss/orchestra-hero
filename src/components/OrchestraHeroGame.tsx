@@ -56,7 +56,7 @@ export default function OrchestraHeroGame({ onClose }: OrchestraHeroGameProps) {
   const instrumentConfig = selectedInstrument ? (ALL_INSTRUMENTS as any)[selectedInstrument] : null
   const currentMode = GAME_MODES[gameMode]
   const currentTheme = (VISUAL_THEMES as any)[currentMode?.colorTheme || 'gold']
-  const ageConfig = AGE_CONFIGS[ageGroup]
+  const ageConfig = (AGE_CONFIGS as any)[ageGroup]
 
   // Calculate travel time based on age and mode
   const travelTime = BASE_TRAVEL_TIME * (currentMode?.slowMode ? 1.5 : 1) / (ageConfig?.noteSpeed || 1)
