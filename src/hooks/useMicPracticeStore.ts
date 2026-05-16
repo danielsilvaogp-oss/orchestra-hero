@@ -130,6 +130,14 @@ export const useMicPracticeStore = create<MicPracticeStore>((set, get) => ({
   processedNotes: new Set(),
   currentHitNote: null,
   
+  // Scoring
+  score: 0,
+  combo: 0,
+  maxCombo: 0,
+  currentStreak: 0,
+  maxStreak: 0,
+  hits: { perfect: 0, great: 0, good: 0, ok: 0, miss: 0 },
+  
   setNotes: (notes) => set({ 
     notes, 
     processedNotes: new Set(),
