@@ -4,7 +4,8 @@ const nextConfig = {
   images: {
     domains: ['localhost'],
   },
-  webpack: (config, { isServer }) => {
+  // Esto es VITAL para que la Hammer Academy funcione en Vercel
+  webpack: (config, { isServer, webpack }) => {
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -12,9 +13,22 @@ const nextConfig = {
         path: false,
         crypto: false,
       };
+
+      // Inyectamos el plugin para que el navegador no busque archivos inexistentes
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+          /tflite_web_api_client/,
+          (resource) => {
+            resource.request = resource.request.replace(
+              /.*tflite_web_api_client.*/,
+              'path' 
+            );
+          }
+        )
+      );
     }
 
-    // ESTO ES LO QUE FALTA: Bloquea el escaneo de los archivos que causan el error
+    // BLOQUEO DE ERRORES: Fuerza a Webpack a ignorar los archivos rotos
     config.resolve.alias = {
       ...config.resolve.alias,
       './tflite_web_api_client': false,
