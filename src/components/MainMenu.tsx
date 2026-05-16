@@ -7,10 +7,11 @@ import { ALL_INSTRUMENTS } from '@/lib/instrument-keys'
 
 interface MainMenuProps {
   onShowAdmin: () => void
+  onOpenConverter?: () => void
   onStartGame?: () => void
 }
 
-export default function MainMenu({ onShowAdmin, onStartGame }: MainMenuProps) {
+export default function MainMenu({ onShowAdmin, onOpenConverter, onStartGame }: MainMenuProps) {
   const { setScreen, selectInstrument, selectedInstrument } = useGameStore()
 
   // Group instruments by type
