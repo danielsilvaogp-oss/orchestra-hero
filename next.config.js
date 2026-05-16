@@ -5,22 +5,24 @@ const nextConfig = {
     domains: ['localhost'],
   },
   webpack: (config, { isServer }) => {
+    // 1. Ignorar módulos de Node que TFLite intenta usar en el navegador
     if (!isServer) {
-      // Evita que Webpack intente resolver módulos de Node.js en el navegador
       config.resolve.fallback = {
         ...config.resolve.fallback,
         fs: false,
         path: false,
+        crypto: false,
       };
     }
-    
-    // Ignora los errores de resolución específicos de tfjs-tflite
+
+    // 2. Bloquear la resolución de los archivos problemáticos de la librería
     config.module.rules.push({
-      test: /tflite_model\.js$/,
+      test: /tflite_model\.js$|bert_nl_classifier\.js$|bert_qa\.js$|common\.js$|image_classifier\.js$/,
       loader: 'string-replace-loader',
       options: {
-        search: "require('./tflite_web_api_client')",
+        search: "require('./tflite_web_api_client')|require('../tflite_web_api_client')",
         replace: "null",
+        flags: 'g'
       },
     });
 
