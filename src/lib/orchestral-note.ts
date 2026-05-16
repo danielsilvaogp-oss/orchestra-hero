@@ -76,7 +76,7 @@ export interface WoodwindKeyMetadata {
   type: 'woodwind'
   keys: boolean[]           // which fingers are pressed
   keyCombination: string   // Display: "1+2", "all", etc.
-  coveredHoles: number[]   // Covered holes count
+  coveredHoles: number    // Covered holes count
   registerKey?: boolean    // Register key for clarinet
 }
 
