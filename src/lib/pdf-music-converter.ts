@@ -57,7 +57,6 @@ export async function convertPDFToMusicXML(
         musicxml: musicXML,
         metadata: {
           title: 'Converted from PDF',
-          tempo: options.tempo,
           noteCount: parsedNotes.length
         },
         warnings: ['Converted from text extraction. Manual verification recommended.']
@@ -74,7 +73,6 @@ export async function convertPDFToMusicXML(
         musicxml: musicXML,
         metadata: {
           title: 'Converted from PDF',
-          tempo: options.tempo,
           noteCount: detectedNotes.length
         },
         warnings: ['Basic note detection used. Results may vary.']
