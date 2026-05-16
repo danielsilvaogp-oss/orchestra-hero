@@ -1,12 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
   images: {
     domains: ['localhost'],
   },
-  webpack: (config, { isServer }) => {
-    // 1. Evitar que Webpack busque módulos de Node en el cliente
+  webpack: (config, { isServer, webpack }) => {
+    // 1. Manejo de fallbacks para el navegador
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -16,17 +15,21 @@ const nextConfig = {
       };
     }
 
-    // 2. Regla agresiva para silenciar los errores de tfjs-tflite
-    config.module.rules.push({
-      test: /\.js$/,
-      include: /node_modules\/@tensorflow\/tfjs-tflite/,
-      loader: 'string-replace-loader',
-      options: {
-        // Buscamos cualquier intento de requerir el cliente problemático
-        search: /require\(['"]\.\.?\/tflite_web_api_client['"]\)/g,
-        replace: 'null',
-      },
-    });
+    // 2. FORZAR EL IGNORAR los archivos problemáticos
+    // Esto crea un módulo vacío cuando Webpack busca los archivos que faltan
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      './tflite_web_api_client': false,
+      '../tflite_web_api_client': false,
+    };
+
+    // 3. Plugin para ignorar los módulos problemáticos de TFLite
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /tflite_web_api_client$/,
+        contextRegExp: /@tensorflow\/tfjs-tflite/,
+      })
+    );
 
     return config;
   },
