@@ -1,0 +1,11 @@
+{
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_SUPABASE_URL": "https://xrzydoutvnorezrnepoi.supabase.co",
+      "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhyenlkb3V0dm5vcmV6cm5lcG9pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2ODc3MDQsImV4cCI6MjA5NDI2MzcwNH0.0z6iOkGJi0UWL_XKJrxcEE1cZsdiTe-SoFAyzMG8GvE"
+    }
+  },
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs"
+}
