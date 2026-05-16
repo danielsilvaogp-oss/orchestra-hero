@@ -1,0 +1,189 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --orchestra-dark: #0a0a14;
+  --orchestra-dark-secondary: #12121f;
+  --orchestra-gold: #d4af37;
+  --orchestra-gold-light: #f0d060;
+  --orchestra-gold-dark: #a08020;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #0a0a14 0%, #12121f 50%, #0a0a14 100%);
+  color: white;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a2e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4af37;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #f0d060;
+}
+
+/* Gold text glow */
+.text-gold-glow {
+  text-shadow: 0 0 20px rgba(212, 175, 55, 0.5), 0 0 40px rgba(212, 175, 55, 0.3);
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient backgrounds */
+.bg-orchestra {
+  background: linear-gradient(180deg, #0a0a14 0%, #12121f 100%);
+}
+
+.bg-grid {
+  background-image: 
+    linear-gradient(rgba(212, 175, 55, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 175, 55, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(212, 175, 55, 0.6);
+  }
+}
+
+.animate-pulse-gold {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Button styles */
+.btn-gold {
+  @apply px-6 py-3 bg-gradient-to-r from-orchestra-gold to-orchestra-gold-dark text-orchestra-dark font-semibold rounded-lg;
+  @apply hover:from-orchestra-gold-light hover:to-orchestra-gold;
+  @apply transition-all duration-300;
+  @apply shadow-lg shadow-orchestra-gold/30;
+}
+
+.btn-gold:hover {
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.5);
+}
+
+.btn-outline {
+  @apply px-6 py-3 border-2 border-orchestra-gold text-orchestra-gold font-semibold rounded-lg;
+  @apply hover:bg-orchestra-gold hover:text-orchestra-dark;
+  @apply transition-all duration-300;
+}
+
+/* Instrument cards */
+.instrument-card {
+  @apply relative overflow-hidden rounded-xl p-4 cursor-pointer;
+  @apply border border-white/10 bg-white/5;
+  @apply hover:border-orchestra-gold/50 hover:bg-white/10;
+  @apply transition-all duration-300;
+}
+
+.instrument-card.selected {
+  @apply border-orchestra-gold bg-orchestra-gold/20;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+/* Song cards */
+.song-card {
+  @apply relative overflow-hidden rounded-xl p-5 cursor-pointer;
+  @apply border border-white/10 bg-white/5;
+  @apply hover:border-orchestra-gold/50 hover:transform hover:-translate-y-1;
+  @apply transition-all duration-300;
+}
+
+.song-card.selected {
+  @apply border-orchestra-gold;
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+/* Difficulty badges */
+.difficulty-badge {
+  @apply px-3 py-1 rounded-full text-xs font-semibold uppercase;
+}
+
+.difficulty-beginner {
+  @apply bg-green-500/20 text-green-400 border border-green-500/30;
+}
+
+.difficulty-intermediate {
+  @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+}
+
+.difficulty-advanced {
+  @apply bg-orange-500/20 text-orange-400 border border-orange-500/30;
+}
+
+.difficulty-expert {
+  @apply bg-red-500/20 text-red-400 border border-red-500/30;
+}
+
+/* Input styles */
+.input-field {
+  @apply w-full px-4 py-3 bg-white/5 border border-white/10 rounded-lg;
+  @apply text-white placeholder-gray-500;
+  @apply focus:outline-none focus:border-orchestra-gold focus:ring-1 focus:ring-orchestra-gold;
+  @apply transition-all duration-300;
+}
+
+/* Canvas container */
+.game-canvas {
+  @apply absolute inset-0 w-full h-full;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply w-12 h-12 border-4 border-orchestra-dark border-t-orchestra-gold rounded-full;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
