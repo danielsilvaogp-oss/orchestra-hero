@@ -553,7 +553,7 @@ function generateAndDownloadMidi(notes: OCRExtractedNote[], tempo: number, instr
   ]
 
   const midiData = new Uint8Array([...header, ...trackChunk])
-  const blob = new Blob([Array.from(midiData)], { type: 'audio/midi' })
+  const blob = new Blob([midiData.buffer], { type: 'audio/midi' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
