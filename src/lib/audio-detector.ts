@@ -170,6 +170,23 @@ export class AudioDetector {
   isActive(): boolean {
     return this.isListening
   }
+
+  stopListening(): void {
+    if (this.microphone) {
+      this.microphone.disconnect()
+      this.microphone = null
+    }
+    if (this.stream) {
+      this.stream.getTracks().forEach(track => track.stop())
+      this.stream = null
+    }
+    if (this.audioContext) {
+      this.audioContext.close()
+      this.audioContext = null
+    }
+    this.isListening = false
+    this.analyser = null
+  }
 }
 
 // Global singleton
