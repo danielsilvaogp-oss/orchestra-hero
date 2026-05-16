@@ -136,7 +136,6 @@ export function parseMusicXML(xmlString: string): ParsedSong | null {
             lane: midi % 4,
             track: partIndex,
             instrument: instrument.toLowerCase(),
-            finger: undefined,
             string,
             dynamic,
             articulations: articulations.length > 0 ? articulations : undefined
