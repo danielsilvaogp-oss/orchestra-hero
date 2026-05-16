@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS oh_songs (
   tempo INTEGER DEFAULT 120,
   instrument TEXT NOT NULL,
   category TEXT DEFAULT 'general',
-  musicxml_url TEXT NOT NULL,
+  musicxml_url TEXT,  -- Nullable - se genera internamente
   audio_url TEXT,
   cover_url TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

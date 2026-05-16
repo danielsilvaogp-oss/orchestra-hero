@@ -1,11 +1,9 @@
 # Dependencies
 node_modules/
-vercel/node_modules/
 
 # Next.js
 .vercel/
 .next/
-vercel/.next/
 
 # Build output
 dist/
@@ -15,6 +13,7 @@ build/
 .env
 .env.local
 .env.*.local
+vercel/
 
 # OS
 .DS_Store
@@ -32,4 +31,14 @@ npm-debug.log*
 
 # Cache
 .cache/
-.vercel/
+
+# Python (keep main.py and app folder)
+__pycache__/
+*.pyc
+app/__pycache__/
+app/*/__pycache__/
+
+# Songs and web folders (optional, can be excluded)
+web/
+songs/
+templates/
