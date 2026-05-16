@@ -16,7 +16,8 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zustand": "^4.4.7",
-    "framer-motion": "^10.16.16"
+    "framer-motion": "^10.16.16",
+    "vexflow": "^4.2.3"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

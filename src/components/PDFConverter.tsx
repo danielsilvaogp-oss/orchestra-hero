@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { convertPDFToMusicXML, musicXMLToMidi, SAMPLE_SONGS, ConvertResult } from '@/lib/pdf-music-converter'
 import ScoreEditor from '@/components/ScoreEditor'
+import ScoreViewer from '@/components/ScoreViewer'
 import { OCRExtractedNote } from '@/lib/music-ocr-bridge'
 import { ParsedNote } from '@/lib/musicxml-parser'
 
@@ -20,6 +21,7 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
   const [selectedSong, setSelectedSong] = useState<string | null>(null)
   const [showLibrary, setShowLibrary] = useState(false)
   const [showEditor, setShowEditor] = useState(false)
+  const [showScoreViewer, setShowScoreViewer] = useState(false)
   const [parsedNotes, setParsedNotes] = useState<OCRExtractedNote[]>([])
   
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -255,13 +257,13 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
   }
 
   return (
-    <div className="fixed inset-0 bg-orchestra-dark z-50 overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-50 z-50 overflow-y-auto">
       {/* Header */}
-      <div className="sticky top-0 bg-orchestra-dark-secondary border-b border-white/10 p-4 flex items-center justify-between">
-        <h1 className="font-display text-2xl text-orchestra-gold">
+      <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between shadow-md">
+        <h1 className="font-display text-2xl text-slate-800">
           📄 Importar Partituras
         </h1>
-        <button onClick={onClose} className="text-white/60 hover:text-white">
+        <button onClick={onClose} className="text-slate-500 hover:text-slate-700">
           ✕ Cerrar
         </button>
       </div>
@@ -273,26 +275,26 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
             onClick={() => setShowLibrary(false)}
             className={`flex-1 p-4 rounded-xl border-2 transition-all ${
               !showLibrary 
-                ? 'border-orchestra-gold bg-orchestra-gold/10' 
-                : 'border-white/20 hover:border-white/40'
+                ? 'border-amber-400 bg-amber-50' 
+                : 'border-slate-200 hover:border-slate-300'
             }`}
           >
             <div className="text-2xl mb-2">📄</div>
-            <div className="font-medium">Subir Archivo</div>
-            <div className="text-white/40 text-sm">PDF o MusicXML</div>
+            <div className="font-medium text-slate-800">Subir Archivo</div>
+            <div className="text-slate-500 text-sm">PDF o MusicXML</div>
           </button>
           
           <button
             onClick={() => setShowLibrary(true)}
             className={`flex-1 p-4 rounded-xl border-2 transition-all ${
               showLibrary 
-                ? 'border-orchestra-gold bg-orchestra-gold/10' 
-                : 'border-white/20 hover:border-white/40'
+                ? 'border-amber-400 bg-amber-50' 
+                : 'border-slate-200 hover:border-slate-300'
             }`}
           >
             <div className="text-2xl mb-2">🎵</div>
-            <div className="font-medium">Biblioteca</div>
-            <div className="text-white/40 text-sm">Canciones de ejemplo</div>
+            <div className="font-medium text-slate-800">Biblioteca</div>
+            <div className="text-slate-500 text-sm">Canciones de ejemplo</div>
           </button>
         </div>
 
@@ -303,17 +305,17 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="glass rounded-xl p-6"
+                className="bg-white rounded-xl p-6 shadow-lg border border-slate-200"
               >
-                <h2 className="font-display text-xl text-white mb-4">Subir archivo de partitura</h2>
+                <h2 className="font-display text-xl text-slate-800 mb-4">Subir archivo de partitura</h2>
                 
                 {/* Drop zone */}
                 <div 
                   onClick={() => fileInputRef.current?.click()}
                   className={`border-2 border-dashed rounded-xl p-8 text-center mb-4 cursor-pointer transition-all ${
                     file 
-                      ? 'border-green-500 bg-green-500/10' 
-                      : 'border-white/20 hover:border-white/40'
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-slate-300 hover:border-slate-400'
                   }`}
                 >
                   <input 
@@ -325,13 +327,13 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
                   />
                   
                   {file ? (
-                    <div className="text-green-400">
+                    <div className="text-green-600">
                       <div className="text-4xl mb-2">✓</div>
-                      <div>{file.name}</div>
-                      <div className="text-sm text-white/50">{(file.size / 1024).toFixed(1)} KB</div>
+                      <div className="font-medium">{file.name}</div>
+                      <div className="text-sm text-slate-500">{(file.size / 1024).toFixed(1)} KB</div>
                     </div>
                   ) : (
-                    <div className="text-white/40">
+                    <div className="text-slate-400">
                       <div className="text-4xl mb-2">📄</div>
                       <div>Arrastra tu archivo aquí</div>
                       <div className="text-sm">PDF, XML, o MusicXML</div>
@@ -340,8 +342,8 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
                 </div>
                 
                 {/* Info */}
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-4">
-                  <p className="text-blue-300 text-sm">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <p className="text-blue-700 text-sm">
                     💡 Los archivos PDF serán convertidos automáticamente. 
                     Para mejores resultados, usa archivos MusicXML (Exportar desde Finale, Sibelius, MuseScore)
                   </p>
@@ -361,13 +363,13 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="glass rounded-xl p-8 text-center"
+                className="bg-white rounded-xl p-8 text-center shadow-lg border border-slate-200"
               >
                 <div className="spinner mx-auto mb-4" />
-                <h2 className="font-display text-xl text-white mb-2">
+                <h2 className="font-display text-xl text-slate-800 mb-2">
                   Convirtiendo partitura...
                 </h2>
-                <p className="text-white/40">
+                <p className="text-slate-500">
                   Este proceso puede tomar unos segundos
                 </p>
               </motion.div>
@@ -377,19 +379,19 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="glass rounded-xl p-6"
+                className="bg-white rounded-xl p-6 shadow-lg border border-slate-200"
               >
                 <div className="text-center mb-6">
                   <div className="text-5xl mb-2">✅</div>
-                  <h2 className="font-display text-2xl text-green-400">
+                  <h2 className="font-display text-2xl text-green-600">
                     ¡Conversión exitosa!
                   </h2>
                 </div>
                 
                 {result.metadata && (
-                  <div className="bg-white/5 rounded-lg p-4 mb-4">
-                    <div className="text-white/60 text-sm mb-2">Información detectada:</div>
-                    <div className="text-white">
+                  <div className="bg-slate-50 rounded-lg p-4 mb-4">
+                    <div className="text-slate-500 text-sm mb-2">Información detectada:</div>
+                    <div className="text-slate-800">
                       {result.metadata.title && <p>Título: {result.metadata.title}</p>}
                       {result.metadata.noteCount && <p>Notas: {result.metadata.noteCount}</p>}
                     </div>
@@ -397,29 +399,35 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
                 )}
                 
                 {result.warnings && result.warnings.length > 0 && (
-                  <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
                     {result.warnings.map((w, i) => (
-                      <p key={i} className="text-yellow-300 text-sm">⚠️ {w}</p>
+                      <p key={i} className="text-yellow-700 text-sm">⚠️ {w}</p>
                     ))}
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <button
+                    onClick={() => setShowScoreViewer(true)}
+                    className="py-3 bg-blue-600/20 border border-blue-500 text-blue-400 rounded-lg font-semibold hover:bg-blue-600/30"
+                  >
+                    🎼 Ver Partitura
+                  </button>
                   <button
                     onClick={handleOpenEditor}
                     className="py-3 bg-purple-600/20 border border-purple-500 text-purple-400 rounded-lg font-semibold hover:bg-purple-600/30"
                   >
-                    ✏️ Editar Partitura
+                    ✏️ Editar
                   </button>
                   <button
                     onClick={handleImport}
                     className="py-3 bg-green-600/20 border border-green-500 text-green-400 rounded-lg font-semibold hover:bg-green-600/30"
                   >
-                    🎮 Jugar Directo
+                    🎮 Jugar
                   </button>
                 </div>
 
-                <p className="text-white/40 text-sm text-center">
+                <p className="text-slate-500 text-sm text-center">
                   Edita la partitura para corregir errores antes de jugar
                 </p>
               </motion.div>
@@ -429,14 +437,14 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="glass rounded-xl p-6"
+                className="bg-white rounded-xl p-6 shadow-lg border border-slate-200"
               >
                 <div className="text-center mb-6">
                   <div className="text-5xl mb-2">❌</div>
-                  <h2 className="font-display text-2xl text-red-400">
+                  <h2 className="font-display text-2xl text-red-600">
                     Error en la conversión
                   </h2>
-                  <p className="text-white/60 mt-2">{result?.error}</p>
+                  <p className="text-slate-600 mt-2">{result?.error}</p>
                 </div>
                 
                 <button
@@ -453,9 +461,9 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="glass rounded-xl p-6"
+            className="bg-white rounded-xl p-6 shadow-lg border border-slate-200"
           >
-            <h2 className="font-display text-xl text-white mb-4">🎵 Biblioteca de Canciones</h2>
+            <h2 className="font-display text-xl text-slate-800 mb-4">🎵 Biblioteca de Canciones</h2>
             
             <div className="space-y-3">
               {SAMPLE_SONGS.map((song) => (
@@ -463,26 +471,26 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
                   key={song.id}
                   whileHover={{ scale: 1.02 }}
                   onClick={() => handleImportSample(song.id)}
-                  className="w-full p-4 rounded-xl text-left transition-all bg-white/5 hover:bg-white/10 border border-white/10 hover:border-orchestra-gold/30"
+                  className="w-full p-4 rounded-xl text-left transition-all bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-amber-300"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-white font-medium">{song.title}</div>
-                      <div className="text-white/40 text-sm">{song.composer}</div>
+                      <div className="text-slate-800 font-medium">{song.title}</div>
+                      <div className="text-slate-500 text-sm">{song.composer}</div>
                     </div>
                     <div className="text-right">
                       <span className={`difficulty-badge difficulty-${song.difficulty}`}>
                         {song.difficulty}
                       </span>
-                      <div className="text-white/30 text-xs mt-1">♫ {song.tempo} BPM</div>
+                      <div className="text-slate-400 text-xs mt-1">♫ {song.tempo} BPM</div>
                     </div>
                   </div>
-                  <div className="text-white/40 text-xs mt-2">{song.description}</div>
+                  <div className="text-slate-500 text-xs mt-2">{song.description}</div>
                 </motion.button>
               ))}
             </div>
             
-            <p className="text-white/30 text-xs text-center mt-4">
+            <p className="text-slate-400 text-xs text-center mt-4">
               Más canciones disponibles en el panel de administración
             </p>
           </motion.div>
@@ -497,6 +505,18 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
           onExportMusicXML={handleExportMusicXML}
           onImportToGame={handleImportToGameFromEditor}
           onClose={() => setShowEditor(false)}
+        />
+      )}
+
+      {showScoreViewer && result?.musicxml && (
+        <ScoreViewer
+          musicxml={result.musicxml}
+          title={result.metadata?.title}
+          onClose={() => setShowScoreViewer(false)}
+          onImport={() => {
+            setShowScoreViewer(false)
+            handleImport()
+          }}
         />
       )}
     </div>
