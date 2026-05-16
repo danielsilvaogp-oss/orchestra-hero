@@ -53,9 +53,9 @@ export default function OrchestraHeroGame({ onClose }: OrchestraHeroGameProps) {
     hits
   } = useMicPracticeStore()
 
-  const instrumentConfig = selectedInstrument ? ALL_INSTRUMENTS[selectedInstrument] : null
+  const instrumentConfig = selectedInstrument ? (ALL_INSTRUMENTS as any)[selectedInstrument] : null
   const currentMode = GAME_MODES[gameMode]
-  const currentTheme = VISUAL_THEMES[currentMode?.colorTheme || 'gold']
+  const currentTheme = (VISUAL_THEMES as any)[currentMode?.colorTheme || 'gold']
   const ageConfig = AGE_CONFIGS[ageGroup]
 
   // Calculate travel time based on age and mode
