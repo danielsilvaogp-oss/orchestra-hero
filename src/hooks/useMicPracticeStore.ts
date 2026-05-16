@@ -45,6 +45,7 @@ interface MicPracticeStore {
   processMiss: (noteIndex: number) => void
   resetGame: () => void
   startGame: () => void
+  endGame: () => void
   getResults: () => any
 }
 
@@ -237,6 +238,11 @@ export const useMicPracticeStore = create<MicPracticeStore>((set, get) => ({
     processedNotes: new Set(),
     failCount: 0,
     isRepetitionRequired: false
+  }),
+
+  endGame: () => set({
+    isPlaying: false,
+    isListening: false
   }),
   
   resetGame: () => set({
