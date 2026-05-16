@@ -57,7 +57,6 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
           targetInstrument: 'violin',
           tempo: 120,
           includeDynamics: true,
-          simplify Accidentals: false,
           maxNotes: 500
         })
       }
