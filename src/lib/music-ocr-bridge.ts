@@ -32,16 +32,27 @@ export class HammerOCRService {
   private model: any = null;
   private isLoaded: boolean = false;
 
-  async loadModel(): Promise<boolean> {
-    if (this.isLoaded) return true;
+ async loadModel(modelVersion: 'v1' | 'v2' = DEFAULT_MODEL): Promise<boolean> {
     try {
-      // Cargamos el modelo TFLite directamente
-      this.model = await tflite.loadTFLiteModel(MODEL_PATH);
-      this.isLoaded = true;
-      console.log('Hammer V2 PRO Model Loaded');
+      console.log(`Loading Hammer OCR model: ${modelVersion}`)
+      
+      // CARGA DINÁMICA: Esto soluciona el error de compilación en Vercel
+      const tflite = await import('@tensorflow/tfjs-tflite');
+      
+      // Configuración de WASM externa para evitar cargar binarios pesados localmente
+      tflite.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@latest/dist/');
+      
+      const modelPath = OCR_MODELS[modelVersion];
+      
+      // Cargamos usando el motor específico de TFLite
+      this.model = await tflite.loadTFLiteModel(modelPath);
+      this.modelLoaded = true;
+      
+      console.log('Hammer V2 PRO cargado exitosamente');
       return true;
     } catch (error) {
-      console.error('Error loading TFLite model:', error);
+      console.error('Failed to load Hammer OCR model:', error);
+      this.modelLoaded = false;
       return false;
     }
   }
