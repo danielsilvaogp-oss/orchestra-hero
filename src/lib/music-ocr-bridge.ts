@@ -1,9 +1,6 @@
 // Music OCR Bridge - Hammer Academy V2 PRO Edition
 import * as tf from '@tensorflow/tfjs';
 
-// NOTA: Hemos eliminado la importación estática de 'tfjs-tflite' aquí
-// para evitar que Webpack explote en el build de Vercel.
-
 export interface OCRResult {
   success: boolean;
   notes: OCRExtractedNote[];
@@ -38,25 +35,24 @@ export class HammerOCRService {
     if (this.modelLoaded) return true;
 
     try {
-      console.log(`Loading Hammer OCR model: ${modelVersion}`);
+      console.log(`Iniciando motor Hammer IA: ${modelVersion}`);
       
-      // CARGA DINÁMICA: Esta es la clave. 
-      // Solo se descarga cuando el músico abre la app en el navegador.
+      // Importación dinámica obligatoria para Next.js
       const tflite = await import('@tensorflow/tfjs-tflite');
       
-      // Configuración de binarios externos
-      tflite.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@latest/dist/');
+      // Versión estable de los binarios WASM
+      tflite.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@0.0.1-alpha.10/dist/');
       
       const modelPath = OCR_MODELS[modelVersion];
       
-      // Cargamos el modelo TFLite
+      // Carga del modelo TFLite
       this.model = await tflite.loadTFLiteModel(modelPath);
       this.modelLoaded = true;
       
-      console.log('Hammer Academy V2 PRO cargado exitosamente');
+      console.log('Hammer Academy V2 PRO: Motor listo');
       return true;
     } catch (error) {
-      console.error('Failed to load Hammer OCR model:', error);
+      console.error('Error crítico en el motor de IA:', error);
       this.modelLoaded = false;
       return false;
     }
@@ -64,16 +60,16 @@ export class HammerOCRService {
 
   async processImage(file: File | Blob): Promise<OCRResult> {
     const loaded = await this.loadModel();
-    if (!loaded) return { success: false, notes: [], warnings: ['Error al cargar el modelo de IA'] };
+    if (!loaded) return { success: false, notes: [], warnings: ['Error al cargar el motor de IA'] };
 
     try {
       const imageTensor = await this.preprocess(file);
       
-      // Inferencia
+      // Inferencia con el modelo entrenado
       const predictions = this.model.predict(imageTensor);
       const data = await predictions.data();
 
-      // Limpiar memoria de Tensores (Muy importante para no crashear el navegador)
+      // Liberar Tensores para no colgar el navegador
       imageTensor.dispose();
       predictions.dispose();
 
@@ -84,7 +80,7 @@ export class HammerOCRService {
         notes,
         metadata: {
           confidence: 0.92,
-          detectedInstruments: ['viola'] // Rango de viola optimizado
+          detectedInstruments: ['viola']
         }
       };
     } catch (error) {
@@ -111,7 +107,6 @@ export class HammerOCRService {
     const notes: OCRExtractedNote[] = [];
     const stepNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-    // Filtro de rango para Viola (MIDI 48 - Do3 hasta 90)
     for (let i = 0; i < results.length / 6; i++) {
       const conf = results[i * 6];
       if (conf < 0.5) continue;
@@ -120,6 +115,7 @@ export class HammerOCRService {
       const octave = Math.floor(results[i * 6 + 2] * 4) + 3;
       const midi = (octave + 1) * 12 + pitchIdx;
 
+      // Rango de Viola (MIDI 48 a 90)
       if (midi >= 48 && midi <= 90) {
         notes.push({
           pitch: `${stepNames[pitchIdx]}${octave}`,
