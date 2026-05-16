@@ -5,7 +5,6 @@ const nextConfig = {
     domains: ['localhost'],
   },
   webpack: (config, { isServer }) => {
-    // Solo manejamos los fallbacks de Node para el navegador
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -14,6 +13,14 @@ const nextConfig = {
         crypto: false,
       };
     }
+
+    // ESTO ES LO QUE FALTA: Bloquea el escaneo de los archivos que causan el error
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      './tflite_web_api_client': false,
+      '../tflite_web_api_client': false,
+    };
+
     return config;
   },
 }
