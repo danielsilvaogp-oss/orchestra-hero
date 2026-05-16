@@ -161,7 +161,7 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
   }
 
   function handleImportToGameFromEditor(notes: OCRExtractedNote[]) {
-    const xml = generateMusicXML(notes, result?.metadata?.tempo || 120, 'violin')
+    const xml = generateMusicXML(notes, 120, 'violin')
     onImportToGame(xml, { ...result?.metadata, noteCount: notes.length })
     setShowEditor(false)
   }
@@ -204,7 +204,7 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
 
   function generateSimpleMidi(notes: OCRExtractedNote[]): Uint8Array {
     const PPQ = 480
-    const tempo = result?.metadata?.tempo || 120
+    const tempo = 120
     const microsecondsPerBeat = 60000000 / tempo
     
     const sortedNotes = [...notes].sort((a, b) => a.startTime - b.startTime)
