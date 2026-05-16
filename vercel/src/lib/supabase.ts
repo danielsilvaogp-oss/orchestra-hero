@@ -5,8 +5,11 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Database types
-export interface Song {
+// ============================================
+// TABLAS ORCHESTRA HERO (con prefijo oh_)
+// ============================================
+
+export interface OHSong {
   id: string
   title: string
   composer: string
@@ -21,15 +24,117 @@ export interface Song {
   created_by: string | null
 }
 
-export interface UserProgress {
+export interface OHGameProgress {
   id: string
-  user_id: string
+  player_id: string
   song_id: string
   score: number
   accuracy: number
   grade: string
   max_combo: number
-  played_at: string
+  max_streak: number
+  fail_count: number
+  hits_perfect: number
+  hits_great: number
+  hits_good: number
+  hits_ok: number
+  hits_miss: number
+  practice_mode: string
+  completion_time: number
+  is_completed: boolean
+  attempts: number
+  created_at: string
+  updated_at: string
+}
+
+export interface OHPlayerAchievement {
+  id: string
+  player_id: string
+  achievement_id: string
+  unlocked_at: string
+}
+
+// Legacy types (deprecated)
+export interface Song extends OHSong {}
+export interface UserProgress extends OHGameProgress {}
+
+// ============================================
+// FUNCIONES DE BASE DE DATOS
+// ============================================
+
+// Obtener canciones
+export async function getSongs(instrument?: string): Promise<OHSong[]> {
+  let query = supabase.from('oh_songs').select('*').order('title')
+  if (instrument) {
+    query = query.eq('instrument', instrument)
+  }
+  const { data, error } = await query
+  if (error) throw error
+  return data || []
+}
+
+// Obtener canción por ID
+export async function getSongById(id: string): Promise<OHSong | null> {
+  const { data, error } = await supabase
+    .from('oh_songs')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) throw error
+  return data
+}
+
+// Guardar progreso del jugador
+export async function saveProgress(progress: Omit<OHGameProgress, 'id' | 'created_at' | 'updated_at'>): Promise<OHGameProgress> {
+  const { data, error } = await supabase
+    .from('oh_game_progress')
+    .insert(progress)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+// Obtener progreso del jugador
+export async function getPlayerProgress(playerId: string): Promise<OHGameProgress[]> {
+  const { data, error } = await supabase
+    .from('oh_game_progress')
+    .select('*')
+    .eq('player_id', playerId)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return data || []
+}
+
+// Obtener leaderboard de una canción
+export async function getLeaderboard(songId: string, limit = 10): Promise<OHGameProgress[]> {
+  const { data, error } = await supabase
+    .from('oh_game_progress')
+    .select('*')
+    .eq('song_id', songId)
+    .eq('is_completed', true)
+    .order('score', { ascending: false })
+    .limit(limit)
+  if (error) throw error
+  return data || []
+}
+
+// Desbloquear logro
+export async function unlockAchievement(playerId: string, achievementId: string): Promise<void> {
+  const { error } = await supabase
+    .from('oh_player_achievements')
+    .insert({ player_id: playerId, achievement_id: achievementId })
+  if (error) console.error('Error unlocking achievement:', error)
+}
+
+// Obtener logros del jugador
+export async function getPlayerAchievements(playerId: string): Promise<OHPlayerAchievement[]> {
+  const { data, error } = await supabase
+    .from('oh_player_achievements')
+    .select('*')
+    .eq('player_id', playerId)
+  if (error) throw error
+  return data || []
 }
 
 // Instrument configurations
