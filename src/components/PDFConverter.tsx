@@ -5,7 +5,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ScoreEditor from '@/components/ScoreEditor'
 import ScoreViewer from '@/components/ScoreViewer'
-import { OCRExtractedNote, processWithHammerOCR, loadHammerModel } from '@/lib/music-ocr-bridge'
+import hammerOCR, { OCRExtractedNote } from '@/lib/music-ocr-bridge'
 
 interface ConvertResult {
   musicxml?: string;
