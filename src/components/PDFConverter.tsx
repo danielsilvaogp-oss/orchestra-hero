@@ -140,7 +140,7 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
 
   function handleExportMidi(notes: OCRExtractedNote[]) {
     const midi = generateSimpleMidi(notes)
-    const blob = new Blob([midi], { type: 'audio/midi' })
+    const blob = new Blob([Array.from(midi)], { type: 'audio/midi' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
