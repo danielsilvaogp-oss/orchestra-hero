@@ -41,7 +41,6 @@ export default function OrchestraFretboard({
         <BrassValveView 
           notes={activeNotes} 
           hitZoneY={hitZoneY}
-          instrument={instrument}
         />
       )}
       
@@ -49,7 +48,6 @@ export default function OrchestraFretboard({
         <WoodwindKeyView 
           notes={activeNotes} 
           hitZoneY={hitZoneY}
-          instrument={instrument}
         />
       )}
       
