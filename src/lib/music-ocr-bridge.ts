@@ -1,9 +1,8 @@
 // Music OCR Bridge - Hammer Academy V2 PRO Edition
 import * as tf from '@tensorflow/tfjs';
-import * as tflite from '@tensorflow/tfjs-tflite';
 
-// Configuración de los binarios WASM para que funcionen en el navegador/Vercel
-tflite.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@latest/dist/');
+// NOTA: Hemos eliminado la importación estática de 'tfjs-tflite' aquí
+// para evitar que Webpack explote en el build de Vercel.
 
 export interface OCRResult {
   success: boolean;
@@ -26,29 +25,35 @@ export interface OCRExtractedNote {
   confidence: number;
 }
 
-const MODEL_PATH = '/models/hammer_academy_V2_PRO.tflite';
+const OCR_MODELS = {
+  v1: '/models/hammer_academy_v1_full.tflite',
+  v2: '/models/hammer_academy_V2_PRO.tflite'
+};
 
 export class HammerOCRService {
   private model: any = null;
-  private isLoaded: boolean = false;
+  private modelLoaded: boolean = false;
 
- async loadModel(modelVersion: 'v1' | 'v2' = DEFAULT_MODEL): Promise<boolean> {
+  async loadModel(modelVersion: 'v1' | 'v2' = 'v2'): Promise<boolean> {
+    if (this.modelLoaded) return true;
+
     try {
-      console.log(`Loading Hammer OCR model: ${modelVersion}`)
+      console.log(`Loading Hammer OCR model: ${modelVersion}`);
       
-      // CARGA DINÁMICA: Esto soluciona el error de compilación en Vercel
+      // CARGA DINÁMICA: Esta es la clave. 
+      // Solo se descarga cuando el músico abre la app en el navegador.
       const tflite = await import('@tensorflow/tfjs-tflite');
       
-      // Configuración de WASM externa para evitar cargar binarios pesados localmente
+      // Configuración de binarios externos
       tflite.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite@latest/dist/');
       
       const modelPath = OCR_MODELS[modelVersion];
       
-      // Cargamos usando el motor específico de TFLite
+      // Cargamos el modelo TFLite
       this.model = await tflite.loadTFLiteModel(modelPath);
       this.modelLoaded = true;
       
-      console.log('Hammer V2 PRO cargado exitosamente');
+      console.log('Hammer Academy V2 PRO cargado exitosamente');
       return true;
     } catch (error) {
       console.error('Failed to load Hammer OCR model:', error);
@@ -64,11 +69,11 @@ export class HammerOCRService {
     try {
       const imageTensor = await this.preprocess(file);
       
-      // Ejecutar la inferencia con el motor TFLite
+      // Inferencia
       const predictions = this.model.predict(imageTensor);
       const data = await predictions.data();
 
-      // Liberar memoria de Tensores
+      // Limpiar memoria de Tensores (Muy importante para no crashear el navegador)
       imageTensor.dispose();
       predictions.dispose();
 
@@ -79,7 +84,7 @@ export class HammerOCRService {
         notes,
         metadata: {
           confidence: 0.92,
-          detectedInstruments: ['viola'] // Ajustado para tu instrumento principal
+          detectedInstruments: ['viola'] // Rango de viola optimizado
         }
       };
     } catch (error) {
@@ -91,14 +96,14 @@ export class HammerOCRService {
   private async preprocess(file: File | Blob): Promise<tf.Tensor> {
     const img = await createImageBitmap(file);
     const canvas = document.createElement('canvas');
-    canvas.width = 640; // Resolución V2 PRO
+    canvas.width = 640; 
     canvas.height = 640;
     const ctx = canvas.getContext('2d')!;
     ctx.drawImage(img, 0, 0, 640, 640);
 
     return tf.browser.fromPixels(canvas)
       .toFloat()
-      .div(255.0) // Normalización
+      .div(255.0) 
       .expandDims(0);
   }
 
@@ -106,7 +111,7 @@ export class HammerOCRService {
     const notes: OCRExtractedNote[] = [];
     const stepNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
-    // Filtro de rango para Viola (MIDI 48 a 88)
+    // Filtro de rango para Viola (MIDI 48 - Do3 hasta 90)
     for (let i = 0; i < results.length / 6; i++) {
       const conf = results[i * 6];
       if (conf < 0.5) continue;
@@ -115,7 +120,6 @@ export class HammerOCRService {
       const octave = Math.floor(results[i * 6 + 2] * 4) + 3;
       const midi = (octave + 1) * 12 + pitchIdx;
 
-      // Filtro de limpieza automático: Solo notas reales de cuerda
       if (midi >= 48 && midi <= 90) {
         notes.push({
           pitch: `${stepNames[pitchIdx]}${octave}`,
