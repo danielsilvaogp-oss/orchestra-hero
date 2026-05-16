@@ -342,8 +342,7 @@ export default function ScoreEditor({
                     onClick={() => moveNote(selectedNoteIndex, 'right')}
                     className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-white"
                     title="Después"
-                  →
-                  </button>
+                  >→</button>
                   <button
                     onClick={() => duplicateNote(selectedNoteIndex)}
                     className="p-2 bg-slate-700 hover:bg-slate-600 rounded text-white"
