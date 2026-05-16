@@ -20,6 +20,7 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
   const containerRef = useRef<HTMLDivElement>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [svgContent, setSvgContent] = useState<string>('')
 
   useEffect(() => {
     async function renderScore() {
@@ -30,7 +31,6 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
         setError(null)
         
         const VF = await import('vexflow')
-        const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = VF
         
         containerRef.current.innerHTML = ''
         
@@ -40,7 +40,6 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
         const notes: ParsedNote[] = []
         const noteElements = doc.querySelectorAll('note')
         
-        let beatCount = 0
         noteElements.forEach((noteEl) => {
           const pitchEl = noteEl.querySelector('pitch')
           if (!pitchEl) return
@@ -54,10 +53,7 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
           else if (alter === '-1') accidental = 'b'
           
           const durationEl = noteEl.querySelector('duration')
-          let duration = durationEl?.textContent || '4'
-          
-          const typeEl = noteEl.querySelector('type')
-          const type = typeEl?.textContent || 'quarter'
+          let duration = parseInt(durationEl?.textContent || '4')
           
           const durationMap: Record<string, string> = {
             '1': 'w',
@@ -68,15 +64,14 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
             '32': '32'
           }
           
+          const durKey = String(duration)
           const keys = `${step.toLowerCase()}/${octave}${accidental}`
           
           notes.push({
             keys,
             duration: durationMap[duration] || 'q',
-            type
+            type: 'quarter'
           })
-          
-          beatCount++
         })
         
         if (notes.length === 0) {
@@ -85,80 +80,40 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
           return
         }
         
-        const renderer = new Renderer(containerRef.current, Renderer.Backends.SVG)
-        renderer.resize(800, 200)
+        const factory = new VF.Factory({ renderer: { elementId: containerRef.current.id, width: 800, height: 200 } })
         
-        const context = renderer.getContext()
-        context.setFont('Arial', 10)
+        const system = factory.System()
         
-        const stave = new Stave(10, 40, 780)
-        stave.addClef('treble').addTimeSignature('4/4')
-        stave.setContext(context).draw()
-        
-        const staveNotes = notes.slice(0, 16).map((noteData, index) => {
-          const note = new StaveNote({
-            keys: [noteData.keys],
-            duration: noteData.duration,
-            type: noteData.type as any
-          })
+        const voiceNotes = notes.slice(0, 8).map((noteData) => {
+          const note = factory.StaveNote({ keys: [noteData.keys], duration: noteData.duration })
           
           if (noteData.keys.includes('#')) {
-            note.addModifier(new Accidental('#'))
-          } else if (noteData.keys.includes('b')) {
-            note.addModifier(new Accidental('b'))
+            note.addModifier(new VF.Accidental('#'), 0)
           }
           
           return note
         })
         
-        if (staveNotes.length > 0) {
-          const voice = new Voice({ num_beats: 16, beat_value: 4 }).setMode(Voice.Mode.SOFT)
-          voice.addTickables(staveNotes)
-          
-          new Formatter().joinVoices([voice]).format([voice], 700)
-          voice.draw(context, stave)
-        }
+        system.addVoices([
+          factory.Voice({ num_beats: 8, beat_value: 4 }).addTickables(voiceNotes)
+        ])
         
-        if (notes.length > 16) {
-          const extraNotes = notes.slice(16, 32)
-          
-          const stave2 = new Stave(10, 120, 780)
-          stave2.setContext(context).draw()
-          
-          const stave2Notes = extraNotes.map((noteData) => {
-            const note = new StaveNote({
-              keys: [noteData.keys],
-              duration: noteData.duration,
-              type: noteData.type as any
-            })
-            
-            if (noteData.keys.includes('#')) {
-              note.addModifier(new Accidental('#'))
-            } else if (noteData.keys.includes('b')) {
-              note.addModifier(new Accidental('b'))
-            }
-            
-            return note
-          })
-          
-          if (stave2Notes.length > 0) {
-            const voice2 = new Voice({ num_beats: 16, beat_value: 4 }).setMode(Voice.Mode.SOFT)
-            voice2.addTickables(stave2Notes)
-            
-            new Formatter().joinVoices([voice2]).format([voice2], 700)
-            voice2.draw(context, stave2)
-          }
-        }
+        factory.draw()
         
+        setSvgContent(containerRef.current.innerHTML)
         setIsLoading(false)
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error rendering score:', err)
-        setError('Error al renderizar la partitura')
+        setError(err?.message || 'Error al renderizar la partitura')
         setIsLoading(false)
       }
     }
     
-    renderScore()
+    if (musicxml && containerRef.current) {
+      const id = 'score-container-' + Math.random().toString(36).substr(2, 9)
+      containerRef.current.id = id
+      renderScore()
+    }
   }, [musicxml])
 
   return (
@@ -214,11 +169,15 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
           </div>
         )}
 
-        <div 
-          ref={containerRef} 
-          className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 overflow-auto"
-          style={{ minHeight: '300px' }}
-        />
+        {!isLoading && !error && (
+          <div 
+            id="score-container"
+            ref={containerRef} 
+            className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 overflow-auto"
+            style={{ minHeight: '300px' }}
+            dangerouslySetInnerHTML={{ __html: svgContent }}
+          />
+        )}
 
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
           <p className="text-blue-700 text-sm">
