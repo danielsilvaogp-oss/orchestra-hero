@@ -150,7 +150,7 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
   }
 
   function handleExportMusicXML(notes: OCRExtractedNote[]) {
-    const xml = generateMusicXML(notes, result?.metadata?.tempo || 120, 'violin')
+    const xml = generateMusicXML(notes, 120, 'violin')
     const blob = new Blob([xml], { type: 'application/xml' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
