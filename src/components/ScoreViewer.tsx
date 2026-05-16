@@ -13,7 +13,6 @@ interface ScoreViewerProps {
 interface ParsedNote {
   keys: string
   duration: string
-  type: string
 }
 
 export default function ScoreViewer({ musicxml, title, onClose, onImport }: ScoreViewerProps) {
@@ -31,12 +30,6 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
         setError(null)
         
         const VF = await import('vexflow')
-        const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = VF
-        
-        const renderer = new Renderer(containerRef.current, Renderer.Backends.SVG)
-        renderer.resize(800, 250)
-        const context = renderer.getContext()
-        context.setFont('Arial', 10)
         
         const parser = new DOMParser()
         const doc = parser.parseFromString(musicxml, 'text/xml')
@@ -60,20 +53,14 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
           let duration = parseInt(durationEl?.textContent || '4')
           
           const durationMap: Record<string, string> = {
-            '1': 'w',
-            '2': 'h',
-            '4': 'q',
-            '8': '8',
-            '16': '16',
-            '32': '32'
+            '1': 'w', '2': 'h', '4': 'q', '8': '8', '16': '16', '32': '32'
           }
           
           const keys = `${step.toLowerCase()}/${octave}${accidental}`
           
           notes.push({
             keys,
-            duration: durationMap[String(duration)] || 'q',
-            type: 'quarter'
+            duration: durationMap[String(duration)] || 'q'
           })
         })
         
@@ -83,65 +70,53 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
           return
         }
         
-        const stave = new Stave(10, 40, 780)
+        containerRef.current.innerHTML = ''
+        
+        const renderer = new VF.Renderer(containerRef.current, VF.Renderer.Backends.SVG)
+        renderer.resize(800, 300)
+        const context = renderer.getContext()
+        
+        const stave = new VF.Stave(10, 40, 780)
         stave.addClef('treble').addTimeSignature('4/4')
         stave.setContext(context).draw()
         
-        const staveNotes = notes.slice(0, 8).map((noteData) => {
-          const note = new StaveNote({
+        const staveNotes = notes.slice(0, 8).map((noteData, idx) => {
+          const note = new VF.StaveNote({
             keys: [noteData.keys],
             duration: noteData.duration
           })
           
           if (noteData.keys.includes('#')) {
-            note.addModifier(new Accidental('#'), 0)
+            note.addModifier(new VF.Accidental('#'), 0)
           } else if (noteData.keys.includes('b')) {
-            note.addModifier(new Accidental('b'), 0)
+            note.addModifier(new VF.Accidental('b'), 0)
           }
           
           return note
         })
         
-        if (staveNotes.length > 0) {
-          const voice = new Voice({ time: '8/4' })
-          
-          staveNotes.forEach(note => {
-            voice.addTickable(note)
-          })
-          
-          new Formatter().joinVoices([voice]).format([voice], 700)
-          voice.draw(context, stave)
-        }
+        VF.Formatter.FormatAndDraw(context, stave, staveNotes)
         
         if (notes.length > 8) {
-          const stave2 = new Stave(10, 140, 780)
+          const stave2 = new VF.Stave(10, 150, 780)
           stave2.setContext(context).draw()
           
           const stave2Notes = notes.slice(8, 16).map((noteData) => {
-            const note = new StaveNote({
+            const note = new VF.StaveNote({
               keys: [noteData.keys],
               duration: noteData.duration
             })
             
             if (noteData.keys.includes('#')) {
-              note.addModifier(new Accidental('#'), 0)
+              note.addModifier(new VF.Accidental('#'), 0)
             } else if (noteData.keys.includes('b')) {
-              note.addModifier(new Accidental('b'), 0)
+              note.addModifier(new VF.Accidental('b'), 0)
             }
             
             return note
           })
           
-          if (stave2Notes.length > 0) {
-            const voice2 = new Voice({ time: '8/4' })
-            
-            stave2Notes.forEach(note => {
-              voice2.addTickable(note)
-            })
-            
-            new Formatter().joinVoices([voice2]).format([voice2], 700)
-            voice2.draw(context, stave2)
-          }
+          VF.Formatter.FormatAndDraw(context, stave2, stave2Notes)
         }
         
         setSvgContent(containerRef.current.innerHTML)
