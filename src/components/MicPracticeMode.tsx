@@ -32,8 +32,8 @@ export default function MicPracticeMode() {
     checkMicHit
   } = useMicPracticeStore()
 
-  const instrumentLanes = selectedInstrument ? null // No lanes needed for mic-only
-  const instrumentConfig = selectedInstrument ? ALL_INSTRUMENTS[selectedInstrument] : null
+  const instrumentLanes = selectedInstrument ? null : null; // No lanes needed for mic-only
+  const instrumentConfig = selectedInstrument ? (ALL_INSTRUMENTS as any)[selectedInstrument] : null
   const instrumentColor = instrumentConfig?.color || '#d4af37'
 
   // Start microphone
