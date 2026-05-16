@@ -27,41 +27,47 @@ export default function MainMenu({ onShowAdmin, onStartGame }: MainMenuProps) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-orchestra bg-grid relative overflow-hidden p-4">
-      {/* Animated background */}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-cute-gradient relative overflow-hidden p-4">
+      {/* Animated cute background */}
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-orchestra-gold/5 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orchestra-purple/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-96 h-96 bg-green-500/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/4 right-1/3 w-48 h-48 bg-yellow-500/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }} />
       </div>
 
-      {/* Title */}
+      {/* Title with rainbow effect */}
       <motion.div 
         initial={{ opacity: 0, y: -30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
         className="text-center mb-8"
       >
-        <h1 className="font-display text-5xl md:text-7xl font-bold text-orchestra-gold text-gold-glow mb-2">
-          🎼 ORCHESTRA HERO 🎼
+        <h1 className="font-display text-5xl md:text-7xl font-bold text-rainbow mb-2 animate-bounce-fun">
+          🎵 ORCHESTRA HERO 🎵
         </h1>
-        <p className="text-white/50 text-lg">
-          ¡Aprende a tocar instrumentos de orquesta!
+        <p className="text-white/70 text-xl font-medium">
+          ¡Aprende música tocando tu instrumento!
         </p>
       </motion.div>
 
-      {/* Welcome message for kids */}
+      {/* Welcome message for kids - Cute bubble */}
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
         className="mb-6"
       >
-        <div className="text-center bg-white/5 rounded-2xl px-8 py-4">
-          <p className="text-2xl mb-2">👋 ¡Hola! ¿Listo para tocar?</p>
-          <p className="text-white/50 text-sm">
-            Elige tu instrumento y toca las notas cuando lleguen a la línea 🎯
+        <div className="text-center bg-gradient-to-r from-pink-500/20 to-purple-500/20 border-2 border-pink-400/30 rounded-3xl px-8 py-6 backdrop-blur-sm">
+          <p className="text-3xl mb-3">👋 ¡Hola, amigo! ¿Listo para tocar?</p>
+          <p className="text-white/60 text-lg">
+            Elige tu instrumento favorito y toca las notas cuando lleguen a la línea 🎯
           </p>
+          <div className="flex justify-center gap-2 mt-4">
+            <span className="text-4xl animate-bounce-fun">🎸</span>
+            <span className="text-4xl animate-bounce-fun" style={{ animationDelay: '0.3s' }}>🎺</span>
+            <span className="text-4xl animate-bounce-fun" style={{ animationDelay: '0.6s' }}>🎹</span>
+          </div>
         </div>
       </motion.div>
 
@@ -210,7 +216,45 @@ export default function MainMenu({ onShowAdmin, onStartGame }: MainMenuProps) {
         </button>
       </motion.div>
 
-      {/* Play Button */}
+      {/* Additional Modes - Cute buttons */}
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="flex flex-wrap justify-center gap-4 mb-6"
+      >
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => useGameStore.getState().setScreen('achievements')}
+          className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl font-bold shadow-lg hover:shadow-purple-500/40 flex items-center gap-2"
+        >
+          🏆 Logros
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => useGameStore.getState().setScreen('listenRepeat')}
+          disabled={!selectedInstrument}
+          className={`px-6 py-3 rounded-2xl font-bold shadow-lg flex items-center gap-2 ${
+            selectedInstrument 
+              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-green-500/40'
+              : 'bg-white/10 text-white/30 cursor-not-allowed'
+          }`}
+        >
+          🎧 Escuchar y Repetir
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => onShowAdmin?.()}
+          className="px-6 py-3 bg-white/10 text-white/60 rounded-2xl font-bold border-2 border-white/20 hover:border-white/40"
+        >
+          ⚙️ Ajustes
+        </motion.button>
+      </motion.div>
+
+      {/* Play Button - Cute and big */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -219,15 +263,15 @@ export default function MainMenu({ onShowAdmin, onStartGame }: MainMenuProps) {
         <motion.button
           onClick={handleStart}
           disabled={!selectedInstrument}
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.08 }}
           whileTap={{ scale: 0.95 }}
-          className={`px-16 py-6 text-2xl font-bold rounded-full transition-all ${
+          className={`px-16 py-6 text-2xl font-bold rounded-3xl transition-all shadow-2xl ${
             selectedInstrument 
-              ? 'bg-gradient-to-r from-orchestra-gold to-yellow-400 text-orchestra-dark shadow-lg shadow-orchestra-gold/50' 
+              ? 'bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-500 text-white hover:shadow-orange-500/50' 
               : 'bg-white/10 text-white/30 cursor-not-allowed'
           }`}
         >
-          🎵 ¡COMENZAR A TOCAR! 🚀
+          🎮 ¡JUGAR! 🎮
         </motion.button>
       </motion.div>
 
