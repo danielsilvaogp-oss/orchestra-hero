@@ -46,38 +46,114 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
     }
   }
 
+  // Parse MusicXML directly to extract notes
+  function parseMusicXMLDirectly(xmlContent: string): OCRExtractedNote[] {
+    const notes: OCRExtractedNote[] = []
+    
+    try {
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(xmlContent, 'text/xml')
+      
+      const noteElements = doc.querySelectorAll('note')
+      let startTime = 0
+      
+      const stepToMidi: Record<string, number> = {
+        'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11
+      }
+      
+      noteElements.forEach((noteEl, index) => {
+        // Skip chord notes for now
+        if (noteEl.querySelector('chord')) return
+        
+        const pitchEl = noteEl.querySelector('pitch')
+        if (!pitchEl) return
+        
+        const step = pitchEl.querySelector('step')?.textContent || 'C'
+        const octave = parseInt(pitchEl.querySelector('octave')?.textContent || '4')
+        const alter = pitchEl.querySelector('alter')?.textContent
+        
+        const isSharp = alter === '1' || alter === '#'
+        const pitch = isSharp ? `${step}#${octave}` : `${step}${octave}`
+        
+        // Calculate MIDI
+        let midi = (octave + 1) * 12 + (stepToMidi[step] || 0)
+        if (isSharp) midi += 1
+        
+        // Duration
+        const durEl = noteEl.querySelector('duration')
+        const duration = durEl ? parseInt(durEl.textContent || '1') * 250 : 500
+        
+        // Measure
+        const measureEl = noteEl.closest('measure')
+        const measure = parseInt(measureEl?.getAttribute('number') || '1')
+        
+        notes.push({
+          pitch,
+          midi,
+          startTime,
+          duration,
+          measure,
+          beat: (index % 4) + 1,
+          confidence: 1
+        })
+        
+        startTime += duration + 50
+      })
+    } catch (e) {
+      console.error('XML parse error:', e)
+    }
+    
+    return notes
+  }
+
   async function handleConvert() {
     if (!file) return
     setLoading(true)
     setError(null)
 
     try {
-      const ocrResult = await processWithHammerOCR(file)
+      // Check if file is MusicXML/XML
+      const isXmlFile = file.name.endsWith('.xml') || file.name.endsWith('.musicxml')
+      
+      let notes: OCRExtractedNote[] = []
+      let musicXmlContent = ''
+      
+      if (isXmlFile) {
+        // Parse MusicXML directly
+        musicXmlContent = await file.text()
+        notes = parseMusicXMLDirectly(musicXmlContent)
+      } else {
+        // For PDF/images, use OCR (which currently returns demo)
+        const ocrResult = await processWithHammerOCR(file)
+        notes = ocrResult.notes
+        musicXmlContent = generateMusicXML(notes)
+      }
 
-      if (ocrResult.success && ocrResult.notes.length > 0) {
-        setParsedNotes(ocrResult.notes)
-        const xml = generateMusicXML(ocrResult.notes)
-        setGeneratedMusicXML(xml)
+      if (notes.length > 0) {
+        setParsedNotes(notes)
+        setGeneratedMusicXML(musicXmlContent)
         setResult({
-          notes: ocrResult.notes,
-          metadata: ocrResult.metadata
+          notes,
+          metadata: { detectedInstruments: ['parsed'], confidence: 1 }
         })
         setStep('result')
       } else {
-        // Generate demo notes if OCR fails
-        const demoNotes = generateDemoNotes()
-        setParsedNotes(demoNotes)
-        const xml = generateMusicXML(demoNotes)
-        setGeneratedMusicXML(xml)
-        setResult({
-          notes: demoNotes,
-          metadata: { detectedInstruments: ['demo'], confidence: 0.5 }
-        })
-        setStep('result')
+        throw new Error('No notes found')
       }
     } catch (err) {
       console.error('Error processing:', err)
       setError('Error al procesar la partitura')
+      
+      // Use demo notes as fallback
+      const demoNotes = generateDemoNotes()
+      setParsedNotes(demoNotes)
+      const xml = generateMusicXML(demoNotes)
+      setGeneratedMusicXML(xml)
+      setResult({
+        notes: demoNotes,
+        metadata: { detectedInstruments: ['demo'], confidence: 0.5 }
+      })
+      setStep('result')
       // Still show demo notes
       const demoNotes = generateDemoNotes()
       setParsedNotes(demoNotes)
