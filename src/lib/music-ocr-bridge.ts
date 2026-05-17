@@ -89,7 +89,12 @@ class TensorFlowEngine {
       // === Step 2: Configure WASM backend with CDN ===
       const wasmBackend = await import('@tensorflow/tfjs-backend-wasm')
       
-      wasmBackend.setWasmPaths(CDN_WASM_BASE, CDN_WASM_BASE)
+      // setWasmPaths is deprecated in newer versions, use setBackend directly
+      try {
+        wasmBackend.setWasmPaths(CDN_WASM_BASE)
+      } catch {
+        console.log('[OCR] Using default WASM paths')
+      }
       
       // === Step 3: Initialize backend ===
       try {
