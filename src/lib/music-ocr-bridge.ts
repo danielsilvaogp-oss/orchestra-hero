@@ -384,7 +384,7 @@ export class HammerOCRService {
       const tensor = tf.tensor4d(normalized, [1, INPUT_SIZE, INPUT_SIZE, 3])
 
       // Run inference
-      const predictions = model.predict(tensor) as tf.Tensor
+      const predictions = model.predict(tensor) as any
       const results = await predictions.data() as Float32Array
 
       // Parse predictions
