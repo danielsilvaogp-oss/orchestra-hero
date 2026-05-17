@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ScoreEditor from '@/components/ScoreEditor'
 import ScoreViewer from '@/components/ScoreViewer'
-import { parseMusicXML, generateMusicXML, generateMIDI, downloadFile, Note, OCRExtractedNote } from '@/lib/musicxml-real'
+import { parseMusicXML, generateMusicXML, generateMIDI, downloadFile, Note } from '@/lib/musicxml-real'
+import { OCRExtractedNote } from '@/lib/music-ocr-bridge'
 
 interface PDFConverterProps {
   onImportToGame: (musicxml: string, metadata: any) => void
