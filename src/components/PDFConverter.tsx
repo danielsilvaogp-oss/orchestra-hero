@@ -4,8 +4,7 @@ import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ScoreEditor from '@/components/ScoreEditor'
 import ScoreViewer from '@/components/ScoreViewer'
-// IMPORTACIÓN CORREGIDA: Traemos la instancia por defecto
-import hammerOCR, { OCRExtractedNote } from '@/lib/music-ocr-bridge'
+import { hammerOCR, processWithHammerOCR, OCRExtractedNote } from '@/lib/music-ocr-bridge'
 
 interface ConvertResult {
   musicxml?: string;
@@ -41,9 +40,8 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
     setLoading(true)
 
     try {
-      // LÓGICA CORREGIDA: 
-      // .processImage() ya se encarga de llamar internamente a loadModel('v2')
-      const ocrResult = await hammerOCR.processImage(file);
+      // Usar la función correcta
+      const ocrResult = await processWithHammerOCR(file);
 
       if (ocrResult.success && ocrResult.notes.length > 0) {
         setParsedNotes(ocrResult.notes);
