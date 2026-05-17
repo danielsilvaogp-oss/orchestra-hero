@@ -8,17 +8,17 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "dependencies": {
+"dependencies": {
     "@supabase/supabase-js": "^2.39.0",
-    "@tensorflow/tfjs": "4.22.0",
-    "@tensorflow/tfjs-backend-wasm": "4.22.0",
-    "@tensorflow/tfjs-tflite": "0.0.1-alpha.10",
+    "@tensorflow/tfjs": "^4.17.0",
+    "@tensorflow/tfjs-backend-wasm": "^4.17.0",
     "next": "14.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "zustand": "^4.4.7",
     "framer-motion": "^10.16.16",
-    "vexflow": "^4.2.3"
+    "vexflow": "^4.2.3",
+    "pdfjs-dist": "^4.0.379"
   },
   "devDependencies": {
     "string-replace-loader": "^3.1.0",

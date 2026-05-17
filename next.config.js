@@ -2,10 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
-    domains: ['localhost'],
+    domains: ['localhost', 'cdnjs.cloudflare.com'],
   },
   webpack: (config, { isServer, webpack }) => {
-    // Handle TensorFlow.js TFLite issues - Block broken modules
+    // Handle TensorFlow.js TFLite issues
     config.resolve.alias = {
       ...config.resolve.alias,
       '@tensorflow/tfjs-tflite': false,
@@ -28,16 +28,12 @@ const nextConfig = {
       type: 'asset/resource',
     })
 
-    // Plugin to handle missing files
+    // Handle pdfjs worker
     if (!isServer) {
-      config.plugins.push(
-        new webpack.NormalModuleReplacementPlugin(
-          /tflite_web_api_client/,
-          (resource) => {
-            resource.request = 'path'
-          }
-        )
-      )
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        canvas: false,
+      }
     }
 
     return config
