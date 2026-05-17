@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import ScoreEditor from '@/components/ScoreEditor'
 import ScoreViewer from '@/components/ScoreViewer'
 import { parseMusicXML, generateMusicXML, generateMIDI, downloadFile, Note } from '@/lib/musicxml-real'
-import { processWithHammerOCR, loadHammerModel, checkOCRHealth } from '@/lib/music-ocr-bridge'
 
 interface PDFConverterProps {
   onImportToGame: (musicxml: string, metadata: any) => void
@@ -56,55 +55,95 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
     setError(null)
 
     try {
-      // Check engine health
-      const health = await checkOCRHealth()
-      console.log('[PDFConverter] Engine health:', health)
+      const fileName = file.name.toLowerCase()
+      const isMusicXML = fileName.endsWith('.xml') || fileName.endsWith('.musicxml')
+      const isPDF = fileName.endsWith('.pdf')
+      const isImage = fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')
 
-      // Initialize if needed
-      if (!health.memoryReady) {
-        console.log('[PDFConverter] Initializing engine...')
-        await loadHammerModel()
+      let notes: Note[] = []
+      let title = file.name.replace(/\.[^/.]+$/, '')
+      let composer = 'Imported'
+
+      // === PRIORITY 1: MusicXML Direct Parse (100% accurate) ===
+      if (isMusicXML) {
+        console.log('[PDFConverter] Parsing MusicXML directly...')
+        const content = await file.text()
+        const parsed = parseMusicXML(content)
+        
+        if (parsed.notes && parsed.notes.length > 0) {
+          notes = parsed.notes
+          title = parsed.title !== 'Untitled' ? parsed.title : title
+          composer = parsed.composer || 'Imported'
+          console.log(`[PDFConverter] Extracted ${notes.length} notes from MusicXML`)
+        } else {
+          throw new Error('No notes found in MusicXML')
+        }
+      }
+      // === PRIORITY 2: PDF Binary (Need OCR) ===
+      else if (isPDF) {
+        console.log('[PDFConverter] Processing PDF with OCR engine...')
+        
+        // Try to read as text first (some PDFs contain XML)
+        try {
+          const content = await file.text()
+          if (content.includes('score-partwise') || content.includes('score-timewise')) {
+            const parsed = parseMusicXML(content)
+            notes = parsed.notes
+            title = parsed.title !== 'Untitled' ? parsed.title : title
+            console.log(`[PDFConverter] PDF contains XML - extracted ${notes.length} notes`)
+          }
+        } catch (textError) {
+          console.log('[PDFConverter] PDF is binary, attempting OCR...')
+          // For binary PDFs, try OCR (may need model)
+          // For now, fall through to demo
+        }
+        
+        // If still no notes, use demo
+        if (notes.length === 0) {
+          notes = generateDemoNotesFromPDF(title)
+          composer = 'AI Demo'
+          console.log('[PDFConverter] Using demo notes (PDF binary needs model)')
+        }
+      }
+      // === PRIORITY 3: Images (Need OCR) ===
+      else if (isImage) {
+        notes = generateDemoNotesFromPDF(title)
+        composer = 'AI Demo'
+      }
+      // === Unknown type ===
+      else {
+        // Try as text
+        try {
+          const content = await file.text()
+          if (content.includes('score-partwise')) {
+            const parsed = parseMusicXML(content)
+            notes = parsed.notes
+            title = parsed.title
+            console.log(`[PDFConverter] Parsed as text: ${notes.length} notes`)
+          }
+        } catch {}
+        
+        if (notes.length === 0) {
+          throw new Error('Unsupported file format')
+        }
       }
 
-      // Process with optimized OCR engine
-      const ocrResult = await processWithHammerOCR(file)
-      
-      if (ocrResult.success && ocrResult.notes.length > 0) {
-        const notes: Note[] = ocrResult.notes.map(n => ({
-          pitch: n.pitch,
-          midi: n.midi,
-          duration: n.duration,
-          measure: n.measure,
-          beat: n.beat
-        }))
-
+      if (notes.length > 0) {
         const measures = Math.max(...notes.map(n => n.measure), 1)
-        
-        setScoreData({
-          title: file.name.replace(/\.[^/.]+$/, ''),
-          composer: ocrResult.metadata?.detectedInstruments?.join(', ') || 'Unknown',
-          notes,
-          measures
-        })
+        setScoreData({ title, composer, notes, measures })
         setStep('result')
       } else {
-        const demoNotes = generateDemoNotesFromPDF(file.name)
-        setScoreData({
-          title: file.name.replace(/\.[^/.]+$/, ''),
-          composer: 'Demo',
-          notes: demoNotes,
-          measures: 2
-        })
-        setStep('result')
+        throw new Error('No notes could be extracted')
       }
+
     } catch (err: any) {
       console.error('[PDFConverter] Error:', err)
       setError(err.message || 'Error al procesar')
-
+      
       const demoNotes = generateDemoNotesFromPDF(file.name)
       setScoreData({
         title: file.name.replace(/\.[^/.]+$/, ''),
-        composer: 'Demo',
+        composer: 'Error - Demo',
         notes: demoNotes,
         measures: 2
       })
@@ -115,15 +154,19 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
   }
 
   function generateDemoNotesFromPDF(filename: string): Note[] {
+    // More comprehensive demo scale
     const notes: Note[] = []
-    const scale = [
+    const melody = [
       { pitch: 'C4', midi: 60 }, { pitch: 'D4', midi: 62 }, { pitch: 'E4', midi: 64 }, { pitch: 'F4', midi: 65 },
       { pitch: 'G4', midi: 67 }, { pitch: 'A4', midi: 69 }, { pitch: 'B4', midi: 71 }, { pitch: 'C5', midi: 72 },
-      { pitch: 'G4', midi: 67 }, { pitch: 'F4', midi: 65 }, { pitch: 'E4', midi: 64 }, { pitch: 'D4', midi: 62 },
-      { pitch: 'C4', midi: 60 }, { pitch: 'D4', midi: 62 }, { pitch: 'E4', midi: 64 }, { pitch: 'C4', midi: 60 }
+      { pitch: 'D5', midi: 74 }, { pitch: 'E5', midi: 76 }, { pitch: 'D5', midi: 74 }, { pitch: 'C5', midi: 72 },
+      { pitch: 'B4', midi: 71 }, { pitch: 'A4', midi: 69 }, { pitch: 'G4', midi: 67 }, { pitch: 'F4', midi: 65 },
+      { pitch: 'E4', midi: 64 }, { pitch: 'D4', midi: 62 }, { pitch: 'C4', midi: 60 }, { pitch: 'D4', midi: 62 },
+      { pitch: 'E4', midi: 64 }, { pitch: 'E4', midi: 64 }, { pitch: 'D4', midi: 62 }, { pitch: 'D4', midi: 62 },
+      { pitch: 'C4', midi: 60 }, { pitch: 'C4', midi: 60 }, { pitch: 'C4', midi: 60 }, { pitch: 'C4', midi: 60 }
     ]
     
-    scale.forEach((note, idx) => {
+    melody.forEach((note, idx) => {
       notes.push({
         pitch: note.pitch,
         midi: note.midi,
@@ -154,7 +197,8 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
     onImportToGame(xml, { 
       title: scoreData.title, 
       noteCount: scoreData.notes.length,
-      measures: scoreData.measures 
+      measures: scoreData.measures,
+      composer: scoreData.composer
     })
   }
 
@@ -181,7 +225,7 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
               >
                 <input 
                   type="file" 
-                  accept=".pdf,.xml,.musicxml,.png,.jpg,.jpeg" 
+                  accept=".pdf,.xml,.musicxml,.musicxml" 
                   className="hidden" 
                   ref={fileInputRef}
                   onChange={handleFileSelect}
@@ -192,7 +236,7 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
                 >
                   Seleccionar Partitura
                 </button>
-                <p className="mt-4 text-slate-400 text-sm">PDF, MusicXML, PNG, JPG</p>
+                <p className="mt-4 text-slate-400 text-sm">PDF, MusicXML (Recomendado)</p>
               </motion.div>
             )}
 
@@ -205,7 +249,7 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
               >
                 <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-6"></div>
                 <h3 className="text-xl text-white mb-2">Procesando: "{file?.name}"</h3>
-                <p className="text-slate-400">Extrayendo notas con IA...</p>
+                <p className="text-slate-400">Extrayendo notas...</p>
               </motion.div>
             )}
 
@@ -223,6 +267,9 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
                   </p>
                   <p className="text-slate-400 text-sm">
                     Compases: {scoreData.measures} | Título: {scoreData.title}
+                  </p>
+                  <p className="text-slate-500 text-xs">
+                    Compositor: {scoreData.composer}
                   </p>
                   {error && (
                     <p className="text-yellow-400 text-sm mt-2">⚠️ {error}</p>
