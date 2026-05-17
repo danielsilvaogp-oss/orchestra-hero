@@ -1,4 +1,4 @@
-// Instrument key mappings for Orchestra Hero
+// Instrument key mappings for Music Trainer
 // Each instrument has its own fingering/position system
 
 export interface InstrumentLane {

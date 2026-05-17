@@ -177,7 +177,7 @@ function generateMusicXML(notes: ParsedNoteData[], options: ConversionOptions): 
     <work-title>Converted Score</work-title>
   </work>
   <identification>
-    <creator type="composer">Orchestra Hero Converter</creator>
+    <creator type="composer">Music Trainer</creator>
   </identification>
   <defaults>
     <sound tempo="${options.tempo}"/>

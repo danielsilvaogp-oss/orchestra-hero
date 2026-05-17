@@ -1,4 +1,4 @@
-// Achievements and Rewards System for Orchestra Hero
+// Achievements and Rewards System for Music Trainer
 
 export interface Achievement {
   id: string

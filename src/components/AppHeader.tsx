@@ -20,7 +20,7 @@ export default function AppHeader({ onOpenConverter, onShowAdmin }: AppHeaderPro
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🎵</span>
-            <span className="font-bold text-xl text-slate-800">Orchestra Hero</span>
+            <span className="font-bold text-xl text-purple-600">Music Trainer</span>
           </div>
           <button
             onClick={() => useGameStore.getState().setScreen('menu')}
@@ -39,7 +39,7 @@ export default function AppHeader({ onOpenConverter, onShowAdmin }: AppHeaderPro
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-2xl">🎵</span>
-            <span className="font-bold text-xl text-slate-800">Orchestra Hero</span>
+            <span className="font-bold text-xl text-purple-600">Music Trainer</span>
           </div>
 
           <div className="flex items-center gap-2 bg-slate-100 rounded-2xl p-1">

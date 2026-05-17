@@ -40,8 +40,8 @@ export default function MainMenu({ onShowAdmin, onOpenConverter, onStartGame }: 
         transition={{ duration: 0.8 }}
         className="text-center mb-8"
       >
-        <h1 className="font-display text-5xl md:text-7xl font-bold text-rainbow mb-2 animate-bounce-fun">
-          🎵 ORCHESTRA HERO 🎵
+        <h1 className="font-display text-5xl md:text-7xl font-bold text-purple-600 mb-2">
+          🎵 Music Trainer
         </h1>
         <p className="text-slate-600 text-xl font-medium">
           ¡Aprende música tocando tu instrumento!

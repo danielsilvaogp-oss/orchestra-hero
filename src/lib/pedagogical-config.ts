@@ -1,4 +1,4 @@
-// Educational Game Configuration for Orchestra Hero
+// Educational Game Configuration for Music Trainer
 // Adaptable for different instruments and age groups
 
 export interface GameMode {
