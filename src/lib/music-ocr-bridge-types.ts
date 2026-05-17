@@ -43,7 +43,7 @@ export const INSTRUMENT_RANGES: Record<string, InstrumentRange> = {
   trumpet: { min: 55, max: 96 },     // G3 to C6
 }
 
-export default {
+export {
   OCRExtractedNote,
   OCRResult,
   InstrumentRange,
