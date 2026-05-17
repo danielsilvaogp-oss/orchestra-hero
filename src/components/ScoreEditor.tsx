@@ -174,7 +174,7 @@ export default function ScoreEditor({
 
   function handleExportMidi() {
     const midi = generateMidi()
-    const blob = new Blob([midi.buffer], { type: 'audio/midi' })
+    const blob = new Blob([Array.from(midi)], { type: 'audio/midi' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
