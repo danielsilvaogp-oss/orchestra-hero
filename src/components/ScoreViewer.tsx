@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { OCRExtractedNote } from '@/lib/music-ocr-bridge'
 
 interface ScoreViewerProps {
   musicxml: string
@@ -10,267 +11,127 @@ interface ScoreViewerProps {
   onImport?: () => void
 }
 
-interface ParsedNote {
-  keys: string
-  duration: string
-  octave: number
-}
-
-function safeParseXML(xmlString: string): Document | null {
+// Parse MusicXML to get notes
+function parseMusicXML(xmlString: string): OCRExtractedNote[] {
+  const notes: OCRExtractedNote[] = []
+  
   try {
     const parser = new DOMParser()
     const doc = parser.parseFromString(xmlString, 'text/xml')
     
-    const parseError = doc.querySelector('parsererror')
-    if (parseError) {
-      console.warn('XML parse error:', parseError.textContent)
-      return null
-    }
+    const noteElements = doc.querySelectorAll('note')
+    let startTime = 0
     
-    return doc
-  } catch (e) {
-    console.error('Failed to parse XML:', e)
-    return null
-  }
-}
-
-function extractNotesFromDoc(doc: Document): ParsedNote[] {
-  const notes: ParsedNote[] = []
-  
-  const parts = doc.querySelectorAll('part')
-  parts.forEach((part) => {
-    const measures = part.querySelectorAll('measure')
-    
-    measures.forEach((measure) => {
-      const noteElements = measure.querySelectorAll('note')
+    noteElements.forEach((noteEl, index) => {
+      const pitchEl = noteEl.querySelector('pitch')
+      if (!pitchEl) return
       
-      noteElements.forEach((noteEl) => {
-        try {
-          const isChord = noteEl.querySelector('chord')
-          if (isChord) return
-          
-          const pitchEl = noteEl.querySelector('pitch')
-          if (!pitchEl) return
-          
-          const step = pitchEl.querySelector('step')?.textContent || 'C'
-          const octave = parseInt(pitchEl.querySelector('octave')?.textContent || '4')
-          const alter = pitchEl.querySelector('alter')?.textContent
-          
-          let accidental = ''
-          if (alter === '1' || alter === '#') accidental = '#'
-          else if (alter === '-1' || alter === 'b') accidental = 'b'
-          
-          const restEl = noteEl.querySelector('rest')
-          if (restEl) return
-          
-          const durationEl = noteEl.querySelector('duration')
-          let duration = 4
-          if (durationEl) {
-            const durValue = parseInt(durationEl.textContent || '4')
-            if (!isNaN(durValue)) duration = durValue
-          }
-          
-          const typeEl = noteEl.querySelector('type')
-          const typeText = typeEl?.textContent?.toLowerCase()
-          
-          const durationMap: Record<string, string> = {
-            'whole': 'w',
-            'half': 'h',
-            'quarter': 'q',
-            'eighth': '8',
-            '16th': '16',
-            '32nd': '32',
-            '1': 'w',
-            '2': 'h',
-            '4': 'q',
-            '8': '8',
-            '16': '16',
-            '32': '32'
-          }
-          
-          const keys = `${step.toLowerCase()}/${octave}${accidental}`
-          
-          notes.push({
-            keys,
-            duration: durationMap[typeText || String(duration)] || 'q',
-            octave
-          })
-        } catch (e) {
-          console.warn('Failed to parse note:', e)
-        }
+      const step = pitchEl.querySelector('step')?.textContent || 'C'
+      const octave = parseInt(pitchEl.querySelector('octave')?.textContent || '4')
+      const alter = pitchEl.querySelector('alter')?.textContent
+      
+      const pitch = alter === '1' || alter === '#' 
+        ? `${step}#${octave}` 
+        : `${step}${octave}`
+      
+      const stepToMidi: Record<string, number> = {
+        'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11
+      }
+      const midi = (octave + 1) * 12 + (stepToMidi[step] || 0)
+      
+      const measureEl = noteEl.closest('measure')
+      const measure = parseInt(measureEl?.getAttribute('number') || '1')
+      
+      notes.push({
+        pitch,
+        midi,
+        startTime,
+        duration: 500,
+        measure,
+        beat: (index % 4) + 1,
+        confidence: 1
       })
+      
+      startTime += 500
     })
-  })
+  } catch (e) {
+    console.error('XML parse error:', e)
+  }
   
   return notes
 }
 
-function generateSimpleDemoNotes(): ParsedNote[] {
-  const notes: ParsedNote[] = []
-  const scale = ['c', 'd', 'e', 'f', 'g', 'a', 'b']
-  const octaves = [4, 4, 4, 4, 4, 4, 5]
+// Simple visual staff rendering
+function renderStaffLine(lineNum: number): string {
+  const lines = ['E', 'G', 'B', 'D', 'F']
+  return lines[lineNum] || ''
+}
+
+function getNotePosition(midi: number): { line: number, isBlack: boolean } {
+  const notePositions: Record<string, number> = {
+    'C4': 0, 'D4': 1, 'E4': 2, 'F4': 3, 'G4': 4, 'A4': 5, 'B4': 6,
+    'C5': 7, 'D5': 8, 'E5': 9, 'F5': 10, 'G5': 11, 'A5': 12, 'B5': 13,
+    'C3': -7, 'D3': -6, 'E3': -5, 'F3': -4, 'G3': -3, 'A3': -2, 'B3': -1
+  }
   
-  scale.forEach((note, i) => {
-    notes.push({
-      keys: `${note}/${octaves[i]}`,
-      duration: 'q',
-      octave: octaves[i]
-    })
+  // Find closest note
+  let closest = 'C4'
+  let minDist = 100
+  
+  Object.keys(notePositions).forEach(note => {
+    const dist = Math.abs(midi - (parseInt(note.slice(-1)) * 12 + notePositions[note]))
+    if (dist < minDist) {
+      minDist = dist
+      closest = note
+    }
   })
   
-  return notes
+  const isBlack = closest.includes('#')
+  const baseLine = notePositions[closest] || 0
+  
+  return { line: baseLine, isBlack }
 }
 
 export default function ScoreViewer({ musicxml, title, onClose, onImport }: ScoreViewerProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [svgContent, setSvgContent] = useState<string>('')
-  const [fallbackMode, setFallbackMode] = useState(false)
+  const [notes] = useState<OCRExtractedNote[]>(() => parseMusicXML(musicxml))
 
-  useEffect(() => {
-    async function renderScore() {
-      if (!containerRef.current) return
-      
-      try {
-        setIsLoading(true)
-        setError(null)
-        setFallbackMode(false)
-        
-        const VF = await import('vexflow')
-        
-        const doc = safeParseXML(musicxml)
-        let notes: ParsedNote[] = []
-        
-        if (doc) {
-          notes = extractNotesFromDoc(doc)
-        }
-        
-        if (notes.length === 0) {
-          console.warn('No notes found, using demo notes')
-          notes = generateSimpleDemoNotes()
-          setFallbackMode(true)
-        }
-        
-        containerRef.current.innerHTML = ''
-        
-        const renderer = new VF.Renderer(containerRef.current, VF.Renderer.Backends.SVG)
-        renderer.resize(800, 300)
-        const context = renderer.getContext()
-        
-        const stave = new VF.Stave(10, 40, 780)
-        stave.addClef('treble').addTimeSignature('4/4')
-        stave.setContext(context).draw()
-        
-        const staveNotes = notes.slice(0, 8).map((noteData) => {
-          try {
-            const note = new VF.StaveNote({
-              keys: [noteData.keys],
-              duration: noteData.duration
-            })
-            
-            if (noteData.keys.includes('#')) {
-              note.addModifier(new VF.Accidental('#'), 0)
-            } else if (noteData.keys.includes('b')) {
-              note.addModifier(new VF.Accidental('b'), 0)
-            }
-            
-            return note
-          } catch (e) {
-            console.warn('Failed to create note:', noteData, e)
-            return null
-          }
-        }).filter(Boolean) as any[]
-        
-        if (staveNotes.length > 0) {
-          try {
-            VF.Formatter.FormatAndDraw(context, stave, staveNotes)
-          } catch (e) {
-            console.warn('Formatter failed, using basic render:', e)
-            staveNotes.forEach((note, i) => {
-              const x = 50 + i * 80
-              note.setBoundingBox(new VF.BoundingBox(x, 60, 80, 40))
-              note.setContext(context).draw()
-            })
-          }
-        }
-        
-        if (notes.length > 8) {
-          const stave2 = new VF.Stave(10, 150, 780)
-          stave2.setContext(context).draw()
-          
-          const stave2Notes = notes.slice(8, 16).map((noteData) => {
-            try {
-              const note = new VF.StaveNote({
-                keys: [noteData.keys],
-                duration: noteData.duration
-              })
-              
-              if (noteData.keys.includes('#')) {
-                note.addModifier(new VF.Accidental('#'), 0)
-              } else if (noteData.keys.includes('b')) {
-                note.addModifier(new VF.Accidental('b'), 0)
-              }
-              
-              return note
-            } catch (e) {
-              return null
-            }
-          }).filter(Boolean) as any[]
-          
-          if (stave2Notes.length > 0) {
-            try {
-              VF.Formatter.FormatAndDraw(context, stave2, stave2Notes)
-            } catch (e) {
-              stave2Notes.forEach((note, i) => {
-                const x = 50 + i * 80
-                note.setBoundingBox(new VF.BoundingBox(x, 170, 80, 40))
-                note.setContext(context).draw()
-              })
-            }
-          }
-        }
-        
-        setSvgContent(containerRef.current.innerHTML)
-        setIsLoading(false)
-      } catch (err: any) {
-        console.error('Error rendering score:', err)
-        setError('Error al renderizar la partitura. Intenta con otro archivo.')
-        setIsLoading(false)
-      }
-    }
-    
-    if (musicxml && containerRef.current) {
-      containerRef.current.innerHTML = ''
-      renderScore()
-    }
-  }, [musicxml])
+  const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+  
+  // Group notes by measure
+  const measures = new Map<number, OCRExtractedNote[]>()
+  notes.forEach(note => {
+    const m = note.measure || 1
+    if (!measures.has(m)) measures.set(m, [])
+    measures.get(m)!.push(note)
+  })
+
+  const sortedMeasures = Array.from(measures.keys()).sort((a, b) => a - b)
 
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-white/95 backdrop-blur-md z-50 overflow-y-auto"
+      className="fixed inset-0 bg-black/90 z-50 overflow-y-auto"
     >
-      <div className="sticky top-0 bg-white border-b border-slate-200 p-4 flex items-center justify-between shadow-md">
+      <div className="sticky top-0 bg-slate-800 border-b border-slate-700 p-4 flex items-center justify-between">
         <div>
-          <h1 className="font-display text-2xl text-slate-800">
+          <h1 className="font-display text-2xl text-white">
             🎼 {title || 'Partitura'}
           </h1>
-          <p className="text-slate-500 text-sm">Vista previa de la partitura</p>
+          <p className="text-slate-400 text-sm">{notes.length} notas detectadas</p>
         </div>
         <div className="flex gap-3">
           {onImport && (
             <button
               onClick={onImport}
-              className="px-5 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+              className="px-5 py-2 bg-green-600 hover:bg-green-500 text-white rounded-xl font-semibold"
             >
               🎮 Jugar
             </button>
           )}
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-100 text-slate-700 rounded-xl font-semibold hover:bg-slate-200 transition-all"
+            className="px-5 py-2 bg-slate-700 text-white rounded-xl hover:bg-slate-600"
           >
             ✕ Cerrar
           </button>
@@ -278,50 +139,86 @@ export default function ScoreViewer({ musicxml, title, onClose, onImport }: Scor
       </div>
 
       <div className="max-w-4xl mx-auto p-6">
-        {isLoading && (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="spinner mx-auto mb-4 border-t-purple-500" />
-              <p className="text-slate-500">Cargando partitura...</p>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
-            <p className="text-red-600">{error}</p>
-            <button 
-              onClick={onClose}
-              className="mt-3 px-4 py-2 bg-red-100 text-red-700 rounded-lg font-medium hover:bg-red-200"
-            >
-              Cerrar
-            </button>
-          </div>
-        )}
-
-        {!isLoading && !error && (
-          <>
-            {fallbackMode && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-4">
-                <p className="text-yellow-700 text-sm">
-                  ⚠️ La partitura original no pudo ser parseada. Mostrando demostración.
-                </p>
+        {/* Staff rendering */}
+        <div className="bg-white rounded-xl p-6 overflow-x-auto">
+          {sortedMeasures.map((measureNum) => (
+            <div key={measureNum} className="mb-8">
+              <div className="text-slate-500 text-sm mb-2 font-bold">Compás {measureNum}</div>
+              
+              {/* Staff lines */}
+              <div className="relative h-24 border-l-2 border-black">
+                {/* 5 staff lines */}
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <div 
+                    key={i} 
+                    className="absolute w-full h-px bg-black"
+                    style={{ top: `${i * 20 + 10}px` }}
+                  />
+                ))}
+                
+                {/* Treble clef */}
+                <div className="absolute left-2 top-0 text-5xl">𝄞</div>
+                
+                {/* Notes */}
+                {measures.get(measureNum)!.map((note, idx) => {
+                  const pos = getNotePosition(note.midi)
+                  const yPos = 50 - (pos.line * 5) // Convert to pixel position
+                  const isLedger = pos.line < -2 || pos.line > 12
+                  
+                  return (
+                    <div
+                      key={idx}
+                      className="absolute flex flex-col items-center"
+                      style={{ 
+                        left: `${60 + idx * 40}px`,
+                        top: `${yPos}px`
+                      }}
+                    >
+                      {/* Ledger lines if needed */}
+                      {pos.line < 0 && Array.from({ length: Math.abs(pos.line) - 1 }).map((_, i) => (
+                        <div key={i} className="w-8 h-px bg-black mb-1" />
+                      ))}
+                      {pos.line > 10 && Array.from({ length: pos.line - 10 }).map((_, i) => (
+                        <div key={i} className="w-8 h-px bg-black mb-1" />
+                      ))}
+                      
+                      {/* Note head */}
+                      <div className={`
+                        w-6 h-5 rounded-full border-2 border-black
+                        ${pos.isBlack ? 'bg-black' : 'bg-white'}
+                      `} />
+                      
+                      {/* Note name */}
+                      <span className="text-xs text-slate-600 mt-1">
+                        {note.pitch}
+                      </span>
+                    </div>
+                  )
+                })}
               </div>
-            )}
-            <div 
-              ref={containerRef} 
-              className="bg-white rounded-xl shadow-lg border border-slate-200 p-4 overflow-auto"
-              style={{ minHeight: '300px' }}
-              dangerouslySetInnerHTML={{ __html: svgContent }}
-            />
-          </>
-        )}
-
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-blue-700 text-sm">
-            💡 <strong>Nota:</strong> Esta vista previa muestra la notación musical. 
-            Haz clic en "Jugar" para tocar las notas en el juego.
-          </p>
+            </div>
+          ))}
+          
+          {notes.length === 0 && (
+            <div className="text-center text-slate-500 py-8">
+              No se pudieron parsear las notas del MusicXML
+            </div>
+          )}
+        </div>
+        
+        {/* Note list */}
+        <div className="mt-6 bg-slate-800 rounded-xl p-4">
+          <h3 className="text-white font-bold mb-3">Notas detectadas:</h3>
+          <div className="flex flex-wrap gap-2">
+            {notes.map((note, idx) => (
+              <span 
+                key={idx}
+                className="px-3 py-1 bg-slate-700 text-white rounded-full text-sm"
+              >
+                {note.pitch}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     </motion.div>
