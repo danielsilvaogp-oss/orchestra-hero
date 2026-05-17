@@ -23,6 +23,8 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<ConvertResult | null>(null)
   const [showEditor, setShowEditor] = useState(false)
+  const [showScoreViewer, setShowScoreViewer] = useState(false)
+  const [generatedMusicXML, setGeneratedMusicXML] = useState<string>('')
   const [parsedNotes, setParsedNotes] = useState<OCRExtractedNote[]>([])
   const [error, setError] = useState<string | null>(null)
   
@@ -54,6 +56,8 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
 
       if (ocrResult.success && ocrResult.notes.length > 0) {
         setParsedNotes(ocrResult.notes)
+        const xml = generateMusicXML(ocrResult.notes)
+        setGeneratedMusicXML(xml)
         setResult({
           notes: ocrResult.notes,
           metadata: ocrResult.metadata
@@ -63,6 +67,8 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
         // Generate demo notes if OCR fails
         const demoNotes = generateDemoNotes()
         setParsedNotes(demoNotes)
+        const xml = generateMusicXML(demoNotes)
+        setGeneratedMusicXML(xml)
         setResult({
           notes: demoNotes,
           metadata: { detectedInstruments: ['demo'], confidence: 0.5 }
@@ -225,6 +231,9 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
                 </div>
                 
                 <div className="flex gap-3 flex-wrap justify-center">
+                  <button onClick={() => setShowScoreViewer(true)} className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold transition-colors">
+                    🎼 Ver Partitura
+                  </button>
                   <button onClick={handleImport} className="px-6 py-3 bg-green-600 hover:bg-green-500 text-white rounded-lg font-semibold transition-colors">
                     🎮 Practicar
                   </button>
@@ -243,6 +252,18 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
           notes={parsedNotes}
           metadata={result?.metadata}
           onClose={() => setShowEditor(false)}
+        />
+      )}
+
+      {showScoreViewer && generatedMusicXML && (
+        <ScoreViewer
+          musicxml={generatedMusicXML}
+          title="Partitura Importada"
+          onClose={() => setShowScoreViewer(false)}
+          onImport={() => {
+            setShowScoreViewer(false)
+            handleImport()
+          }}
         />
       )}
     </div>
