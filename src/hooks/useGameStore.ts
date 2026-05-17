@@ -15,6 +15,8 @@ interface GameStore {
   // Game
   notes: ParsedNote[]
   processedNotes: Set<number>
+  customMusicXML: string | null
+  customMetadata: any
   gameStartTime: number
   isPlaying: boolean
   isPaused: boolean
@@ -38,6 +40,7 @@ interface GameStore {
   selectSong: (song: any) => void
   selectInstrument: (instrument: string | null) => void
   setDifficulty: (difficulty: 'beginner' | 'intermediate' | 'advanced' | 'expert') => void
+  setCustomMusicXML: (xml: string | null, metadata: any) => void
   
   // Game actions
   setNotes: (notes: ParsedNote[]) => void
@@ -97,6 +100,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   gameStartTime: 0,
   isPlaying: false,
   isPaused: false,
+  customMusicXML: null,
+  customMetadata: null,
   
   score: 0,
   combo: 0,
@@ -119,6 +124,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   selectInstrument: (instrument) => set({ selectedInstrument: instrument }),
   
   setDifficulty: (difficulty) => set({ difficulty }),
+  
+  setCustomMusicXML: (xml, metadata) => set({ customMusicXML: xml, customMetadata: metadata }),
   
   setNotes: (notes) => set({ notes, processedNotes: new Set() }),
   

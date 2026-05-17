@@ -20,8 +20,6 @@ export default function Home() {
   const screen = useGameStore(state => state.screen)
   const [showAdmin, setShowAdmin] = useState(false)
   const [showConverter, setShowConverter] = useState(false)
-  const [customMusicXML, setCustomMusicXML] = useState<string | null>(null)
-  const [customMetadata, setCustomMetadata] = useState<any>(null)
 
   const [playerStats] = useState({
     totalPlays: 15,
@@ -39,8 +37,7 @@ export default function Home() {
   const listenRepeatNotes = useMicPracticeStore(state => state.notes)
 
   function handleImportFromConverter(musicxml: string, metadata: any) {
-    setCustomMusicXML(musicxml)
-    setCustomMetadata(metadata)
+    useGameStore.getState().setCustomMusicXML(musicxml, metadata)
     setShowConverter(false)
     useGameStore.getState().setScreen('playing')
     useMicPracticeStore.getState().startGame()

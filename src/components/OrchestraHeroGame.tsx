@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useMicPracticeStore } from '@/hooks/useMicPracticeStore'
+import { useGameStore } from '@/hooks/useGameStore'
+import { parseMusicXML } from '@/lib/musicxml-real'
 import { ALL_INSTRUMENTS } from '@/lib/instrument-keys'
 import { 
   GAME_MODES, 
@@ -89,6 +91,20 @@ export default function OrchestraHeroGame({ onClose }: OrchestraHeroGameProps) {
       setTimeout(() => setShowEncouragement(null), 1500)
     }
   }, [hits])
+
+  // Load custom MusicXML if available
+  useEffect(() => {
+    const customMusicXML = useGameStore.getState().customMusicXML
+    if (customMusicXML) {
+      console.log('[OrchestraHeroGame] Loading custom MusicXML...')
+      const parsed = parseMusicXML(customMusicXML)
+      if (parsed.notes && parsed.notes.length > 0) {
+        console.log(`[OrchestraHeroGame] Parsed ${parsed.notes.length} notes from custom XML`)
+        useMicPracticeStore.getState().setNotes(parsed.notes as any)
+        useGameStore.getState().setCustomMusicXML(null, null)
+      }
+    }
+  }, [])
 
   // Countdown
   useEffect(() => {
