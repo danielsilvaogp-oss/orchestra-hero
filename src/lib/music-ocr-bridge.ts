@@ -44,7 +44,6 @@ export class HammerOCRService {
   private modelLoadPromise: Promise<boolean> | null = null
 
   async loadModel(modelVersion: 'v1' | 'v2' = DEFAULT_MODEL): Promise<boolean> {
-    // Prevent multiple concurrent load attempts
     if (this.modelLoadPromise) {
       return this.modelLoadPromise
     }
@@ -57,7 +56,7 @@ export class HammerOCRService {
     try {
       console.log(`[HammerOCR] Loading model: ${modelVersion}`)
 
-      // Set backend to WebGL for browser (not WASM to avoid _malloc issues)
+      // Use WebGL backend instead of WASM to avoid _malloc issues
       await tf.setBackend('webgl')
       await tf.ready()
 
@@ -65,34 +64,31 @@ export class HammerOCRService {
 
       const modelPath = OCR_MODELS[modelVersion]
 
-      // Try loading as GraphModel first (common for TFLite converted)
       try {
         this.model = await tf.loadGraphModel(modelPath)
         this.modelLoaded = true
         console.log('[HammerOCR] GraphModel loaded successfully')
         return true
       } catch (graphError) {
-        console.warn('[HammerOCR] GraphModel load failed:', graphError)
+        console.warn('[HammerOCR] GraphModel load failed, trying LayersModel')
       }
 
-      // Fallback to LayersModel
       try {
         this.model = await tf.loadLayersModel(modelPath)
         this.modelLoaded = true
         console.log('[HammerOCR] LayersModel loaded successfully')
         return true
       } catch (layersError) {
-        console.warn('[HammerOCR] LayersModel load failed:', layersError)
+        console.warn('[HammerOCR] LayersModel load failed, running demo mode')
       }
 
-      // If no model files, simulate with demo mode
-      console.log('[HammerOCR] No model files found, running in demo mode')
+      // Demo mode - no model files
       this.modelLoaded = true
       return true
 
     } catch (error) {
       console.error('[HammerOCR] Failed to load model:', error)
-      this.modelLoaded = true // Allow demo mode
+      this.modelLoaded = true
       return true
     }
   }
@@ -110,31 +106,26 @@ export class HammerOCRService {
     }
 
     try {
-      // Preprocess image to tensor
       const imageTensor = await this.preprocessImage(file)
       
       let notes: OCRExtractedNote[]
 
-      // Run inference only if model is loaded
       if (this.model && this.modelLoaded) {
         try {
           const predictions = this.model.predict(imageTensor) as tf.Tensor
           const results = await predictions.data()
           notes = this.parsePredictions(results)
-          
           predictions.dispose()
-        } catch (inferenceError) {
-          console.warn('[HammerOCR] Inference failed, using demo notes:', inferenceError)
+        } catch (e) {
           notes = this.generateDemoNotes()
         }
       } else {
-        // Demo mode - generate sample notes
         notes = this.generateDemoNotes()
       }
 
       imageTensor.dispose()
 
-      // Filter for violin (MIDI 55-103) and viola (MIDI 48-90) ranges
+      // Filter for violin (MIDI 55-103) and viola (MIDI 48-90)
       notes = this.filterByInstrumentRange(notes, ['violin', 'viola'])
 
       return {
@@ -148,9 +139,9 @@ export class HammerOCRService {
     } catch (error) {
       console.error('[HammerOCR] Processing error:', error)
       return {
-        success: true, // Return success with demo notes
+        success: true,
         notes: this.generateDemoNotes(),
-        warnings: ['Using demo mode due to processing error']
+        warnings: ['Using demo mode']
       }
     }
   }
@@ -161,12 +152,10 @@ export class HammerOCRService {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')!
       
-      // Model input size: 640x640 as requested
       const inputSize = 640
       canvas.width = inputSize
       canvas.height = inputSize
       
-      // Resize maintaining aspect ratio
       const scale = Math.min(inputSize / bitmap.width, inputSize / bitmap.height)
       const x = (inputSize - bitmap.width * scale) / 2
       const y = (inputSize - bitmap.height * scale) / 2
@@ -175,23 +164,19 @@ export class HammerOCRService {
       ctx.fillRect(0, 0, inputSize, inputSize)
       ctx.drawImage(bitmap, x, y, bitmap.width * scale, bitmap.height * scale)
       
-      // Get pixel data and normalize to [0,1]
       const imageData = ctx.getImageData(0, 0, inputSize, inputSize)
       const pixels = imageData.data
       
-      // Convert to tensor with shape [1, 640, 640, 3]
       const normalized = new Float32Array(inputSize * inputSize * 3)
       for (let i = 0; i < pixels.length; i += 4) {
         const idx = i / 4
-        normalized[idx] = pixels[i] / 255       // R
-        normalized[idx + inputSize * inputSize] = pixels[i + 1] / 255 // G
-        normalized[idx + 2 * inputSize * inputSize] = pixels[i + 2] / 255 // B
+        normalized[idx] = pixels[i] / 255
+        normalized[idx + inputSize * inputSize] = pixels[i + 1] / 255
+        normalized[idx + 2 * inputSize * inputSize] = pixels[i + 2] / 255
       }
       
       return tf.tensor4d(normalized, [1, inputSize, inputSize, 3])
     } catch (error) {
-      console.warn('[HammerOCR] Image preprocessing failed, using tensor:', error)
-      // Return a dummy tensor for demo mode
       return tf.zeros([1, 640, 640, 3])
     }
   }
@@ -204,7 +189,6 @@ export class HammerOCRService {
     
     for (let i = 0; i < numDetections; i++) {
       const baseIdx = i * 6
-      
       const confidence = results[baseIdx]
       if (confidence < 0.3) continue
       
@@ -234,7 +218,6 @@ export class HammerOCRService {
   }
 
   private generateDemoNotes(): OCRExtractedNote[] {
-    // Generate a simple C major scale as demo
     const notes: OCRExtractedNote[] = []
     const scale = [
       { pitch: 'C4', midi: 60 },
@@ -264,8 +247,6 @@ export class HammerOCRService {
   }
 
   private filterByInstrumentRange(notes: OCRExtractedNote[], instruments: string[]): OCRExtractedNote[] {
-    // Violin range: MIDI 55-103
-    // Viola range: MIDI 48-90
     const ranges: Record<string, { min: number; max: number }> = {
       violin: { min: 55, max: 103 },
       viola: { min: 48, max: 90 },
@@ -280,7 +261,7 @@ export class HammerOCRService {
           return true
         }
       }
-      return true // Keep note if no range matches
+      return true
     })
   }
 
@@ -295,7 +276,6 @@ export class HammerOCRService {
     if (avgMidi >= 48 && avgMidi <= 65) instruments.add('viola')
     if (avgMidi >= 36 && avgMidi <= 60) instruments.add('cello')
     if (avgMidi >= 60 && avgMidi <= 84) instruments.add('flute')
-    if (avgMidi >= 50 && avgMidi <= 75) instruments.add('clarinet')
     
     return Array.from(instruments).length > 0 ? Array.from(instruments) : ['demo']
   }
@@ -310,20 +290,10 @@ export class HammerOCRService {
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>
 <score-partwise version="3.1" xmlns="${ns}">
-  <work>
-    <work-title>${ocrResult.metadata?.title || 'Imported Score'}</work-title>
-  </work>
-  <identification>
-    <creator type="composer">Music Trainer OCR</creator>
-  </identification>
-  <defaults>
-    <sound tempo="${options.tempo}"/>
-  </defaults>
-  <part-list>
-    <score-part id="P1">
-      <part-name>${options.instrument}</part-name>
-    </score-part>
-  </part-list>
+  <work><work-title>${ocrResult.metadata?.title || 'Imported Score'}</work-title></work>
+  <identification><creator type="composer">Music Trainer</creator></identification>
+  <defaults><sound tempo="${options.tempo}"/></defaults>
+  <part-list><score-part id="P1"><part-name>${options.instrument}</part-name></score-part></part-list>
   <part id="P1">`
 
     const measures = new Map<number, OCRExtractedNote[]>()
@@ -346,15 +316,7 @@ export class HammerOCRService {
         const step = note.pitch[0]
         const octave = parseInt(note.pitch.match(/\d+/)?.[0] || '4')
         
-        xml += `
-      <note>
-        <pitch>
-          <step>${step}</step>
-          <octave>${octave}</octave>
-        </pitch>
-        <duration>${Math.max(duration, 1)}</duration>
-        <type>quarter</type>
-      </note>`
+        xml += `\n      <note><pitch><step>${step}</step><octave>${octave}</octave></pitch><duration>${Math.max(duration, 1)}</duration><type>quarter</type></note>`
       })
       
       xml += '\n    </measure>'
@@ -365,15 +327,7 @@ export class HammerOCRService {
   }
 }
 
-// ============================================
-// Default instance
-// ============================================
-
 export const hammerOCR = new HammerOCRService()
-
-// ============================================
-// Public API
-// ============================================
 
 export async function loadHammerModel(version: 'v1' | 'v2' = 'v2'): Promise<boolean> {
   return hammerOCR.loadModel(version)
