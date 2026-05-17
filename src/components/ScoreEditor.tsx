@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import { OCRExtractedNote } from '@/lib/music-ocr-bridge'
+import { OCRExtractedNote } from '@/lib/music-ocr-bridge-types'
 
 interface ScoreEditorProps {
   notes: OCRExtractedNote[]
