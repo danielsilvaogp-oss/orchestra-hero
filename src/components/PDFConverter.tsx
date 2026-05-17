@@ -154,14 +154,6 @@ export default function PDFConverter({ onImportToGame, onClose }: PDFConverterPr
         metadata: { detectedInstruments: ['demo'], confidence: 0.5 }
       })
       setStep('result')
-      // Still show demo notes
-      const demoNotes = generateDemoNotes()
-      setParsedNotes(demoNotes)
-      setResult({
-        notes: demoNotes,
-        metadata: { detectedInstruments: ['demo'], confidence: 0.5 }
-      })
-      setStep('result')
     } finally {
       setLoading(false)
     }
