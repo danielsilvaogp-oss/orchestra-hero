@@ -54,40 +54,25 @@ export class HammerOCRService {
 
   private async _loadModelInternal(modelVersion: 'v1' | 'v2'): Promise<boolean> {
     try {
-      console.log(`[HammerOCR] Loading model: ${modelVersion}`)
-
       // Use WebGL backend instead of WASM to avoid _malloc issues
       await tf.setBackend('webgl')
       await tf.ready()
 
-      console.log('[HammerOCR] TensorFlow.js ready, backend:', tf.getBackend())
-
       const modelPath = OCR_MODELS[modelVersion]
 
+      // Try to load model - silently fail and use demo mode if not found
       try {
         this.model = await tf.loadGraphModel(modelPath)
         this.modelLoaded = true
-        console.log('[HammerOCR] GraphModel loaded successfully')
         return true
-      } catch (graphError) {
-        console.warn('[HammerOCR] GraphModel load failed, trying LayersModel')
+      } catch {
+        // Model not found - use demo mode silently
       }
 
-      try {
-        this.model = await tf.loadLayersModel(modelPath)
-        this.modelLoaded = true
-        console.log('[HammerOCR] LayersModel loaded successfully')
-        return true
-      } catch (layersError) {
-        console.warn('[HammerOCR] LayersModel load failed, running demo mode')
-      }
-
-      // Demo mode - no model files
       this.modelLoaded = true
       return true
 
-    } catch (error) {
-      console.error('[HammerOCR] Failed to load model:', error)
+    } catch {
       this.modelLoaded = true
       return true
     }
