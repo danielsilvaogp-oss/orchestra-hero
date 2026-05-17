@@ -7,6 +7,7 @@ export interface Note {
   duration: number
   measure: number
   beat: number
+  startTime?: number
 }
 
 export interface ParsedScore {
@@ -147,7 +148,7 @@ export function generateMusicXML(notes: Note[], options: { title?: string; tempo
   
   sortedMeasures.forEach(measureNum => {
     const measureNotes = measuresMap.get(measureNum)!
-    measureNotes.sort((a, b) => a.startTime - b.startTime)
+    measureNotes.sort((a, b) => (a.startTime || 0) - (b.startTime || 0))
     
     xml += `\n    <measure number="${measureNum}">`
     
